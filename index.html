@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Club Jazmin FC — Cartera</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --verde:#1A56A8;--verde-med:#1E6FCC;--verde-clar:#E8F0FB;
+  --rojo:#C0392B;--rojo-clar:#FDEDEC;
+  --ambar:#E67E22;--ambar-clar:#FEF9E7;
+  --azul:#2471A3;--azul-clar:#EBF5FB;
+  --gris:#5D6D7E;--gris-clar:#F4F6F7;
+  --bg:#F8F9FA;--card:#FFFFFF;
+  --border:#E8ECEF;--text:#1A1D23;--text2:#6B7280;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* TOPBAR */
+.topbar{background:#1A3A6B;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-logo{width:34px;height:34px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.topbar-title{color:#fff;font-size:15px;font-weight:600;line-height:1.2}
+.topbar-title small{font-size:11px;font-weight:400;opacity:.75;display:block}
+.role-switcher{display:flex;gap:4px}
+.role-btn{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);background:transparent;transition:.15s}
+.role-btn.active{background:#fff;color:#1A3A6B;border-color:#fff}
+/* NAV */
+.nav{background:var(--card);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;padding:0 12px;gap:2px;position:sticky;top:56px;z-index:40}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{padding:12px 14px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s}
+.nav-btn.active{color:#1A56A8;border-bottom-color:#1A56A8}
+/* CONTENT */
+.content{padding:16px;max-width:800px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:14px;font-weight:600;color:var(--text)}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:480px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;color:var(--text2);font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.stat-value{font-size:26px;font-weight:700;line-height:1}
+.stat-sub{font-size:11px;margin-top:4px;color:var(--text2)}
+.stat-verde .stat-value{color:#1A56A8}
+.stat-rojo .stat-value{color:var(--rojo)}
+.stat-ambar .stat-value{color:var(--ambar)}
+.stat-azul .stat-value{color:var(--azul)}
+/* SEARCH */
+.search-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.search-bar input,.search-bar select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--card);color:var(--text);outline:none}
+.search-bar input{flex:1;min-width:120px}
+.search-bar input:focus,.search-bar select:focus{border-color:var(--verde)}
+/* JUGADOR ITEM */
+.jugador-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:var(--card);cursor:pointer;transition:.15s;box-shadow:var(--shadow)}
+.jugador-item:hover{border-color:var(--verde);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.av-verde{background:#E8F0FB;color:#1A56A8}
+.av-rojo{background:var(--rojo-clar);color:var(--rojo)}
+.av-ambar{background:var(--ambar-clar);color:var(--ambar)}
+.av-gris{background:var(--gris-clar);color:var(--gris)}
+.jugador-info{flex:1;min-width:0}
+.jugador-nombre{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jugador-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.jugador-right{text-align:right;flex-shrink:0}
+/* BADGES */
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-verde{background:#E8F0FB;color:#1A56A8}
+.badge-rojo{background:var(--rojo-clar);color:var(--rojo)}
+.badge-ambar{background:var(--ambar-clar);color:var(--ambar)}
+.badge-gris{background:var(--gris-clar);color:var(--gris)}
+.monto{font-size:12px;color:var(--text2);margin-top:3px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:.15s;line-height:1}
+.btn:hover{background:var(--gris-clar)}
+.btn-verde{background:#1A56A8;color:#fff;border-color:#1A56A8}
+.btn-verde:hover{background:#1E6FCC}
+.btn-rojo{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+.btn-rojo:hover{opacity:.9}
+.btn-wa{background:#25D366;color:#fff;border-color:#25D366}
+.btn-wa:hover{opacity:.9}
+.btn-email{background:var(--azul);color:#fff;border-color:var(--azul)}
+.btn-email:hover{opacity:.9}
+.btn-sm{padding:6px 11px;font-size:12px}
+.btn-xs{padding:4px 8px;font-size:11px}
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.form-input{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--card);color:var(--text);outline:none;transition:.15s}
+.form-input:focus{border-color:#1A56A8;box-shadow:0 0 0 3px rgba(26,86,168,.15)}
+.form-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-end;justify-content:center;padding:0}
+.overlay.open{display:flex}
+@media(min-width:520px){.overlay{align-items:center;padding:16px}}
+.modal{background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:460px;max-height:90vh;overflow-y:auto}
+@media(min-width:520px){.modal{border-radius:16px}}
+.modal-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:1}
+.modal-title{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1;padding:4px}
+.modal-body{padding:18px}
+/* INFO ROWS */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border:none}
+.info-key{font-size:12px;color:var(--text2);font-weight:500}
+.info-val{font-size:13px;font-weight:600;color:var(--text)}
+/* MSG PREVIEW */
+.msg-box{background:var(--gris-clar);border-radius:10px;padding:12px;font-size:12px;line-height:1.7;color:var(--text);margin:12px 0;white-space:pre-line;border-left:3px solid #1A56A8}
+/* ACTION BTNS */
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+/* ESTADO SELECT */
+.estado-select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--card);color:var(--text);width:100%;margin-top:6px;outline:none}
+.estado-select:focus{border-color:#1A56A8}
+/* LOADING */
+.loading{text-align:center;padding:32px;color:var(--text2);font-size:13px}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:#1A56A8;border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.empty-text{font-size:13px}
+/* PROFES */
+.profes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.profe-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow)}
+.profe-av{width:44px;height:44px;border-radius:50%;background:#E8F0FB;color:#1A56A8;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;margin:0 auto 10px}
+.profe-nombre{font-size:13px;font-weight:600}
+.profe-cats{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.5}
+.profe-stat{font-size:12px;color:#1A56A8;margin-top:8px;font-weight:600}
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:#1A1D23;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;z-index:200;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* CAT ROWS */
+.cat-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.cat-row:last-child{border:none}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;margin-top:4px;overflow:hidden}
+.progress-fill{height:100%;background:#1A56A8;border-radius:2px;transition:.5s}
+/* HISTORIAL */
+.historial-item{padding:10px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:var(--card);display:flex;align-items:center;gap:12px}
+.hist-dot{width:8px;height:8px;border-radius:50%;background:#1A56A8;flex-shrink:0}
+.hist-info{flex:1}
+.hist-nombre{font-size:13px;font-weight:600}
+.hist-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.hist-val{font-size:13px;font-weight:700;color:#1A56A8}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo"><img src="data:image/jpeg;base64,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" style="width:34px;height:34px;border-radius:8px;object-fit:cover"></div>
+    <div class="topbar-title">Club Jazmin FC <small>Gestión de cartera</small></div>
+  </div>
+  <div class="role-switcher">
+    <button class="role-btn active" onclick="setRole('caro')" id="rb-caro">Caro</button>
+    <button class="role-btn" onclick="setRole('danna')" id="rb-danna">Danna</button>
+    <button class="role-btn" onclick="setRole('profe')" id="rb-profe">Profe</button>
+  </div>
+</div>
+
+<div class="nav" id="main-nav">
+  <button class="nav-btn active" onclick="showSection('dashboard',this)">Panel</button>
+  <button class="nav-btn" onclick="showSection('jugadores',this)">Jugadores</button>
+  <button class="nav-btn" onclick="showSection('cobros',this)">Cobros</button>
+  <button class="nav-btn" onclick="showSection('nuevo',this)" id="nav-nuevo">+ Inscribir</button>
+  <button class="nav-btn" onclick="showSection('historial',this)">Historial</button>
+  <button class="nav-btn" onclick="showSection('profes',this)">Profes</button>
+</div>
+
+<div class="content">
+
+<!-- DASHBOARD -->
+<div class="section active" id="s-dashboard">
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card stat-azul"><div class="stat-label">Jugadores</div><div class="stat-value" id="st-total">—</div></div>
+    <div class="stat-card stat-verde"><div class="stat-label">Al día</div><div class="stat-value" id="st-pagados">—</div><div class="stat-sub" id="st-pct"></div></div>
+    <div class="stat-card stat-rojo"><div class="stat-label">Vencidos</div><div class="stat-value" id="st-vencidos">—</div><div class="stat-sub" style="color:var(--rojo)">Cobrar hoy</div></div>
+    <div class="stat-card stat-verde"><div class="stat-label">Recaudo</div><div class="stat-value" style="font-size:18px" id="st-recaudo">—</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">⚠️ Vencidos urgentes</span>
+      <button class="btn btn-sm" onclick="showSection('cobros',document.querySelectorAll('.nav-btn')[2])">Ver todos</button>
+    </div>
+    <div id="urgentes-list"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">📊 Por categoría</span></div>
+    <div id="cat-resumen"></div>
+  </div>
+</div>
+
+<!-- JUGADORES -->
+<div class="section" id="s-jugadores">
+  <div class="search-bar">
+    <input type="text" placeholder="🔍 Buscar jugador..." id="search-q" oninput="renderJugadores()">
+    <select id="f-cat-filter" onchange="renderJugadores()">
+      <option value="">Todas las cats</option>
+    </select>
+    <select id="f-estado-filter" onchange="renderJugadores()">
+      <option value="">Todos</option>
+      <option value="PAGO">✅ Pagados</option>
+      <option value="VENCIDO">🔴 Vencidos</option>
+      <option value="POR VENCER">🟡 Por vencer</option>
+    </select>
+  </div>
+  <div id="jugadores-list"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+</div>
+
+<!-- COBROS -->
+<div class="section" id="s-cobros">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span style="font-size:13px;color:var(--text2)" id="cobros-count"></span>
+    <button class="btn btn-sm btn-rojo" onclick="cobrarTodos()">📱 Cobrar todos por WA</button>
+  </div>
+  <div id="cobros-list"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+</div>
+
+<!-- NUEVO JUGADOR -->
+<div class="section" id="s-nuevo">
+  <div class="card">
+    <div class="card-header"><span class="card-title">➕ Inscripción de jugador nuevo</span></div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Nombre completo del jugador</label>
+        <input class="form-input" type="text" id="fn-nombre" placeholder="Ej: JUAN DAVID GARCIA LOPEZ">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-input" id="fn-cat">
+          <option>2007</option><option>2008</option><option>2009</option>
+          <option>2010</option><option>2011</option><option>2012</option>
+          <option>2013</option><option selected>2014</option><option>2015</option>
+          <option>2016</option><option>2017</option><option>2018</option>
+          <option>2019</option><option>FEMENINO</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor mensualidad ($)</label>
+        <input class="form-input" type="number" id="fn-valor" value="180000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Día de pago (1-28)</label>
+        <input class="form-input" type="number" id="fn-dia" value="1" min="1" max="28">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre del acudiente</label>
+        <input class="form-input" type="text" id="fn-acudiente" placeholder="Nombre del papá o mamá">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Teléfono acudiente</label>
+        <input class="form-input" type="tel" id="fn-tel" placeholder="3001234567">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correo acudiente</label>
+        <input class="form-input" type="email" id="fn-email" placeholder="correo@gmail.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Método de pago habitual</label>
+        <select class="form-input" id="fn-metodo">
+          <option>NEQU</option><option>BOLD</option><option>DAVIPLATA</option>
+          <option>EFECTIVO</option><option>DATAFONO</option><option>CAJA SOCIAL</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Observaciones</label>
+        <input class="form-input" type="text" id="fn-obs" placeholder="Notas adicionales...">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="limpiarForm()">Limpiar</button>
+      <button class="btn btn-verde" onclick="inscribirJugador()">✅ Inscribir jugador</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORIAL -->
+<div class="section" id="s-historial">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📅 Historial de pagos</span>
+    </div>
+    <div id="historial-list"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+  </div>
+</div>
+
+<!-- PROFES -->
+<div class="section" id="s-profes">
+  <div class="profes-grid" id="profes-grid"></div>
+</div>
+
+</div><!-- /content -->
+
+<!-- MODAL DETALLE -->
+<div class="overlay" id="overlay" onclick="cerrarOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="m-nombre">Jugador</span>
+      <button class="modal-close" onclick="document.getElementById('overlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="m-info"></div>
+      <div style="margin-top:14px">
+        <div class="form-label">Cambiar estado de pago</div>
+        <select class="estado-select" id="m-estado" onchange="actualizarEstado()">
+          <option value="PAGO">✅ Pagado</option>
+          <option value="VENCIDO">🔴 Vencido</option>
+          <option value="POR VENCER">🟡 Por vencer</option>
+          <option value="SIN INFO">⚪ Sin info</option>
+        </select>
+      </div>
+      <div style="margin-top:14px">
+        <div class="form-label">Mensaje de cobro</div>
+        <div class="msg-box" id="m-msg"></div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-wa btn-sm" onclick="enviarWA()">📱 WhatsApp</button>
+        <button class="btn btn-email btn-sm" onclick="enviarEmail()">✉️ Correo</button>
+        <button class="btn btn-verde btn-sm" onclick="marcarPagadoModal()">✅ Pagado</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://wqdsxifxegtnqeosidgx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxZHN4aWZ4ZWd0bnFlb3NpZGd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMDI4MTEsImV4cCI6MjA5MzU3ODgxMX0.-nrCwXH14i19rxgPZN7nF0hZxtJac9W4BRx2BDw3JXQ';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const PROFES = {
+  "2007":"Edisson","2008":"Edisson","2009":"Edisson","2010":"Edisson",
+  "2011":"Fabián","2012":"Fabián","2013":"Fabián",
+  "2014":"Jessica","2015":"Jessica",
+  "2016":"José","2017":"José",
+  "2018":"Juan","2019":"Juan","FEMENINO":"Karen"
+};
+
+let jugadores = [];
+let selectedJ = null;
+let currentRole = 'caro';
+
+function fmt(n){ return new Intl.NumberFormat('es-CO').format(n||0); }
+function initials(s){ return s.split(' ').slice(0,2).map(w=>w[0]||'').join(''); }
+function avClass(e){
+  if(e==='PAGO') return 'av-verde';
+  if(e==='VENCIDO') return 'av-rojo';
+  if(e==='POR VENCER') return 'av-ambar';
+  return 'av-gris';
+}
+function badgeHTML(e){
+  if(e==='PAGO') return '<span class="badge badge-verde">✅ Pagado</span>';
+  if(e==='VENCIDO') return '<span class="badge badge-rojo">🔴 Vencido</span>';
+  if(e==='POR VENCER') return '<span class="badge badge-ambar">🟡 Por vencer</span>';
+  return '<span class="badge badge-gris">⚪ Sin info</span>';
+}
+
+function toast(msg, duration=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),duration);
+}
+
+function setRole(r){
+  currentRole=r;
+  ['caro','danna','profe'].forEach(x=>document.getElementById('rb-'+x).classList.toggle('active',x===r));
+  document.getElementById('nav-nuevo').style.display = r==='profe'?'none':'block';
+  toast('Vista: '+(r==='caro'?'Caro (admin)':r==='danna'?'Danna (cartera)':'Profe'));
+}
+
+function showSection(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='jugadores') renderJugadores();
+  if(id==='cobros') renderCobros();
+  if(id==='historial') loadHistorial();
+  if(id==='profes') renderProfes();
+}
+
+// ── LOAD DATA ──
+async function loadJugadores(){
+  const {data,error} = await sb.from('jugadores').select('*').order('nombre');
+  if(error){ toast('Error al cargar datos'); console.error(error); return; }
+  jugadores = data || [];
+  populateCatFilter();
+  renderDashboard();
+  renderJugadores();
+  renderProfes();
+}
+
+function populateCatFilter(){
+  const cats=[...new Set(jugadores.map(j=>j.categoria))].sort();
+  const sel=document.getElementById('f-cat-filter');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todas las cats</option>'+cats.map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('');
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const total=jugadores.length;
+  const pagados=jugadores.filter(j=>j.estado==='PAGO').length;
+  const vencidos=jugadores.filter(j=>j.estado==='VENCIDO').length;
+  const recaudo=jugadores.filter(j=>j.estado==='PAGO').reduce((a,j)=>a+(j.valor||0),0);
+
+  document.getElementById('st-total').textContent=total;
+  document.getElementById('st-pagados').textContent=pagados;
+  document.getElementById('st-pct').textContent=total?Math.round(pagados/total*100)+'% al día':'';
+  document.getElementById('st-vencidos').textContent=vencidos;
+  document.getElementById('st-recaudo').textContent='$'+fmt(recaudo);
+
+  const urgentes=jugadores.filter(j=>j.estado==='VENCIDO').slice(0,5);
+  document.getElementById('urgentes-list').innerHTML = urgentes.length
+    ? urgentes.map(j=>`
+      <div class="jugador-item" onclick="abrirDetalle(${j.id})">
+        <div class="avatar av-rojo">${initials(j.nombre)}</div>
+        <div class="jugador-info">
+          <div class="jugador-nombre">${j.nombre}</div>
+          <div class="jugador-meta">${j.categoria} · ${j.acudiente||'Sin acudiente'}</div>
+        </div>
+        <div class="jugador-right">
+          <div class="monto" style="color:var(--rojo);font-weight:700">$${fmt(j.valor)}</div>
+        </div>
+      </div>`).join('')
+    : '<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Sin vencidos</div></div>';
+
+  const cats={};
+  jugadores.forEach(j=>{
+    if(!cats[j.categoria]) cats[j.categoria]={total:0,pagados:0,recaudo:0};
+    cats[j.categoria].total++;
+    if(j.estado==='PAGO'){cats[j.categoria].pagados++;cats[j.categoria].recaudo+=(j.valor||0);}
+  });
+  document.getElementById('cat-resumen').innerHTML = Object.entries(cats)
+    .sort((a,b)=>b[1].recaudo-a[1].recaudo)
+    .map(([cat,d])=>{
+      const pct=d.total?Math.round(d.pagados/d.total*100):0;
+      return `<div class="cat-row">
+        <div>
+          <div style="font-size:13px;font-weight:600">${cat} <span style="font-size:11px;color:var(--text2);font-weight:400">${PROFES[cat]||''}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div style="text-align:right;margin-left:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--verde)">$${fmt(d.recaudo)}</div>
+          <div style="font-size:11px;color:var(--text2)">${d.pagados}/${d.total}</div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ── JUGADORES ──
+function renderJugadores(){
+  const q=(document.getElementById('search-q').value||'').toLowerCase();
+  const cat=document.getElementById('f-cat-filter').value;
+  const est=document.getElementById('f-estado-filter').value;
+  let lista=jugadores;
+  if(q) lista=lista.filter(j=>j.nombre.toLowerCase().includes(q)||(j.acudiente||'').toLowerCase().includes(q));
+  if(cat) lista=lista.filter(j=>j.categoria===cat);
+  if(est) lista=lista.filter(j=>j.estado===est);
+  document.getElementById('jugadores-list').innerHTML = lista.length
+    ? lista.map(j=>`
+      <div class="jugador-item" onclick="abrirDetalle(${j.id})">
+        <div class="avatar ${avClass(j.estado)}">${initials(j.nombre)}</div>
+        <div class="jugador-info">
+          <div class="jugador-nombre">${j.nombre}</div>
+          <div class="jugador-meta">${j.categoria} · Día ${j.dia_pago||'?'} · ${PROFES[j.categoria]||''}</div>
+        </div>
+        <div class="jugador-right">
+          ${badgeHTML(j.estado)}
+          <div class="monto">$${fmt(j.valor)}</div>
+        </div>
+      </div>`).join('')
+    : '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No se encontraron jugadores</div></div>';
+}
+
+// ── COBROS ──
+function renderCobros(){
+  const vencidos=jugadores.filter(j=>j.estado==='VENCIDO');
+  document.getElementById('cobros-count').textContent=`${vencidos.length} jugadores con pago pendiente`;
+  document.getElementById('cobros-list').innerHTML = vencidos.length
+    ? vencidos.map(j=>`
+      <div class="jugador-item">
+        <div class="avatar av-rojo">${initials(j.nombre)}</div>
+        <div class="jugador-info" onclick="abrirDetalle(${j.id})" style="cursor:pointer">
+          <div class="jugador-nombre">${j.nombre}</div>
+          <div class="jugador-meta">${j.categoria} · ${j.acudiente||''} · ${j.observaciones||''}</div>
+        </div>
+        <div class="jugador-right">
+          <div class="monto" style="color:var(--rojo);font-weight:700;margin-bottom:4px">$${fmt(j.valor)}</div>
+          <div style="display:flex;gap:4px">
+            ${j.telefono?`<button class="btn btn-xs btn-wa" onclick="enviarWADirecto(${j.id})">📱</button>`:''}
+            <button class="btn btn-xs btn-verde" onclick="marcarPagadoDirecto(${j.id})">✅</button>
+          </div>
+        </div>
+      </div>`).join('')
+    : '<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Sin cobros pendientes</div></div>';
+}
+
+// ── HISTORIAL ──
+async function loadHistorial(){
+  const {data,error}=await sb.from('historial_pagos').select('*').order('created_at',{ascending:false}).limit(50);
+  if(error){ toast('Error cargando historial'); return; }
+  const list=data||[];
+  document.getElementById('historial-list').innerHTML = list.length
+    ? list.map(h=>`
+      <div class="historial-item">
+        <div class="hist-dot"></div>
+        <div class="hist-info">
+          <div class="hist-nombre">${h.nombre_jugador}</div>
+          <div class="hist-meta">${h.mes_pagado||''} · ${h.metodo||''} · ${h.registrado_por||''} · ${new Date(h.created_at).toLocaleDateString('es-CO')}</div>
+        </div>
+        <div class="hist-val">$${fmt(h.valor)}</div>
+      </div>`).join('')
+    : '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin pagos registrados aún</div></div>';
+}
+
+// ── PROFES ──
+function renderProfes(){
+  const profes={};
+  jugadores.forEach(j=>{
+    const p=PROFES[j.categoria]||'Sin asignar';
+    if(!profes[p]) profes[p]={cats:new Set(),total:0,pagados:0,vencidos:0};
+    profes[p].cats.add(j.categoria);
+    profes[p].total++;
+    if(j.estado==='PAGO') profes[p].pagados++;
+    if(j.estado==='VENCIDO') profes[p].vencidos++;
+  });
+  document.getElementById('profes-grid').innerHTML = Object.entries(profes).map(([nombre,d])=>`
+    <div class="profe-card">
+      <div class="profe-av">${nombre.slice(0,2).toUpperCase()}</div>
+      <div class="profe-nombre">${nombre}</div>
+      <div class="profe-cats">${[...d.cats].sort().join(', ')}</div>
+      <div class="profe-stat">${d.pagados}/${d.total} pagados</div>
+      ${d.vencidos?`<div style="font-size:11px;color:var(--rojo);margin-top:3px">${d.vencidos} vencido${d.vencidos>1?'s':''}</div>`:''}
+    </div>`).join('');
+}
+
+// ── DETALLE MODAL ──
+function abrirDetalle(id){
+  selectedJ = jugadores.find(j=>j.id===id);
+  if(!selectedJ) return;
+  const j=selectedJ;
+  document.getElementById('m-nombre').textContent=j.nombre;
+  document.getElementById('m-estado').value=j.estado||'VENCIDO';
+  document.getElementById('m-info').innerHTML=`
+    <div class="info-row"><span class="info-key">Categoría</span><span class="info-val">${j.categoria}</span></div>
+    <div class="info-row"><span class="info-key">Profe</span><span class="info-val">${PROFES[j.categoria]||'—'}</span></div>
+    <div class="info-row"><span class="info-key">Mensualidad</span><span class="info-val">$${fmt(j.valor)}</span></div>
+    <div class="info-row"><span class="info-key">Día de pago</span><span class="info-val">${j.dia_pago||'—'}</span></div>
+    <div class="info-row"><span class="info-key">Acudiente</span><span class="info-val">${j.acudiente||'—'}</span></div>
+    <div class="info-row"><span class="info-key">Teléfono</span><span class="info-val">${j.telefono||'—'}</span></div>
+    <div class="info-row"><span class="info-key">Correo</span><span class="info-val" style="font-size:12px">${j.email||'—'}</span></div>
+    <div class="info-row"><span class="info-key">Método</span><span class="info-val">${j.metodo_pago||'—'}</span></div>
+    ${j.observaciones?`<div class="info-row"><span class="info-key">Obs</span><span class="info-val" style="font-size:12px">${j.observaciones}</span></div>`:''}
+  `;
+  document.getElementById('m-msg').textContent=generarMensaje(j);
+  document.getElementById('overlay').classList.add('open');
+}
+
+function generarMensaje(j){
+  return `Hola ${j.acudiente||'acudiente'}, le saluda el Club Jazmin FC.\n\nLe recordamos que la mensualidad de *${j.nombre}* (${j.categoria}) por valor de *$${fmt(j.valor)}* se encuentra pendiente de pago.\n\nPuede realizar su pago a través de:\n• Nequi: 300 000 0000\n• Bold: 300 000 0000\n\nGracias por su puntualidad 🙏\nClub Deportivo Jazmin FC`;
+}
+
+function cerrarOverlay(e){
+  if(e.target===document.getElementById('overlay'))
+    document.getElementById('overlay').classList.remove('open');
+}
+
+// ── ACTUALIZAR ESTADO ──
+async function actualizarEstado(){
+  if(!selectedJ) return;
+  const nuevo=document.getElementById('m-estado').value;
+  const {error}=await sb.from('jugadores').update({estado:nuevo}).eq('id',selectedJ.id);
+  if(error){ toast('Error al actualizar'); return; }
+  selectedJ.estado=nuevo;
+  jugadores=jugadores.map(j=>j.id===selectedJ.id?{...j,estado:nuevo}:j);
+  toast('Estado actualizado ✅');
+  renderDashboard(); renderJugadores(); renderCobros();
+}
+
+async function marcarPagadoModal(){
+  if(!selectedJ) return;
+  await sb.from('jugadores').update({estado:'PAGO'}).eq('id',selectedJ.id);
+  await registrarPago(selectedJ);
+  selectedJ.estado='PAGO';
+  jugadores=jugadores.map(j=>j.id===selectedJ.id?{...j,estado:'PAGO'}:j);
+  document.getElementById('m-estado').value='PAGO';
+  toast('✅ Marcado como pagado y registrado en historial');
+  renderDashboard(); renderJugadores(); renderCobros();
+}
+
+async function marcarPagadoDirecto(id){
+  const j=jugadores.find(x=>x.id===id);
+  if(!j) return;
+  await sb.from('jugadores').update({estado:'PAGO'}).eq('id',id);
+  await registrarPago(j);
+  jugadores=jugadores.map(x=>x.id===id?{...x,estado:'PAGO'}:x);
+  toast('✅ '+j.nombre.split(' ')[0]+' marcado como pagado');
+  renderDashboard(); renderCobros();
+}
+
+async function registrarPago(j){
+  const mes=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][new Date().getMonth()];
+  await sb.from('historial_pagos').insert({
+    jugador_id:j.id, nombre_jugador:j.nombre,
+    mes_pagado:mes, valor:j.valor,
+    metodo:j.metodo_pago, registrado_por:currentRole
+  });
+}
+
+// ── COBRAR ──
+function enviarWA(){
+  if(!selectedJ) return;
+  if(!selectedJ.telefono){ toast('Sin número registrado'); return; }
+  const msg=encodeURIComponent(generarMensaje(selectedJ));
+  const tel=selectedJ.telefono.replace(/\D/g,'');
+  window.open('https://wa.me/57'+tel+'?text='+msg,'_blank');
+}
+
+function enviarEmail(){
+  if(!selectedJ) return;
+  if(!selectedJ.email){ toast('Sin correo registrado'); return; }
+  const subj=encodeURIComponent('Recordatorio pago mensualidad — Club Jazmin FC');
+  const body=encodeURIComponent(generarMensaje(selectedJ));
+  window.open('mailto:'+selectedJ.email+'?subject='+subj+'&body='+body,'_blank');
+}
+
+function enviarWADirecto(id){
+  const j=jugadores.find(x=>x.id===id);
+  if(!j||!j.telefono){ toast('Sin número registrado'); return; }
+  const msg=encodeURIComponent(generarMensaje(j));
+  window.open('https://wa.me/57'+j.telefono.replace(/\D/g,'')+'?text='+msg,'_blank');
+}
+
+function cobrarTodos(){
+  const vencidos=jugadores.filter(j=>j.estado==='VENCIDO'&&j.telefono);
+  if(!vencidos.length){ toast('Sin vencidos con teléfono registrado'); return; }
+  toast(`Abriendo WA para ${vencidos[0].nombre.split(' ')[0]}...`);
+  setTimeout(()=>enviarWADirecto(vencidos[0].id),400);
+}
+
+// ── INSCRIBIR ──
+async function inscribirJugador(){
+  const nombre=(document.getElementById('fn-nombre').value||'').trim().toUpperCase();
+  if(!nombre){ toast('Escribe el nombre del jugador'); return; }
+  const nuevo={
+    nombre, categoria:document.getElementById('fn-cat').value,
+    estado:'VENCIDO',
+    valor:parseInt(document.getElementById('fn-valor').value)||180000,
+    dia_pago:parseInt(document.getElementById('fn-dia').value)||1,
+    acudiente:document.getElementById('fn-acudiente').value.trim(),
+    telefono:document.getElementById('fn-tel').value.trim(),
+    email:document.getElementById('fn-email').value.trim(),
+    metodo_pago:document.getElementById('fn-metodo').value,
+    observaciones:document.getElementById('fn-obs').value.trim(),
+  };
+  const {data,error}=await sb.from('jugadores').insert(nuevo).select();
+  if(error){ toast('Error al inscribir: '+error.message); return; }
+  jugadores.push(data[0]);
+  toast('✅ '+nombre.split(' ')[0]+' inscrito correctamente');
+  limpiarForm();
+  renderDashboard(); populateCatFilter();
+}
+
+function limpiarForm(){
+  ['fn-nombre','fn-acudiente','fn-tel','fn-email','fn-obs'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('fn-valor').value='180000';
+  document.getElementById('fn-dia').value='1';
+}
+
+// ── INIT ──
+loadJugadores();
+</script>
+</body>
+</html>
