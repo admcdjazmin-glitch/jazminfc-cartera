@@ -503,8 +503,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
           <input class="finput" type="number" id="nj-valor" value="180000">
         </div>
         <div class="fg">
-          <label class="flabel">Día de pago</label>
-          <input class="finput" type="number" id="nj-dia" value="1" min="1" max="28">
+          <label class="flabel">Día de pago 📅</label>
+          <input class="finput" type="number" id="nj-dia" value="1" min="1" max="28" placeholder="Ej: 5 = vence el 5 de cada mes">
+          <span style="font-size:10px;color:var(--tx3);margin-top:2px">Día del mes en que debe pagar (+ 2 días de gracia)</span>
         </div>
         <div class="fg">
           <label class="flabel">Método habitual</label>
@@ -579,10 +580,30 @@ function showSection(id,btn){
 }
 
 function diasMora(j){
-  if(j.estado==='PAGO')return 0;
-  if(!j.fecha_limite_pago)return j.estado==='VENCIDO'?15:0;
-  const diff=Math.floor((new Date()-new Date(j.fecha_limite_pago+'T12:00:00'))/(1000*60*60*24));
-  return Math.max(0,diff);
+  // Si ya pagó este mes → 0
+  if(j.estado==='PAGO') return 0;
+  const hoy=new Date();
+  const dia=j.dia_pago||1;
+  const GRACIA=2; // días de gracia
+  // Fecha límite = día de pago del mes en curso + gracia
+  let limite=new Date(hoy.getFullYear(),hoy.getMonth(),dia+GRACIA);
+  // Si aún no llegó la fecha límite de este mes → no hay mora
+  if(hoy<=limite) return 0;
+  // Días desde que venció el plazo
+  const diff=Math.floor((hoy-limite)/(1000*60*60*24));
+  return Math.max(1,diff);
+}
+
+function estadoCalculado(j){
+  if(j.estado==='PAGO') return 'PAGO';
+  const hoy=new Date();
+  const dia=j.dia_pago||1;
+  const GRACIA=2;
+  const limite=new Date(hoy.getFullYear(),hoy.getMonth(),dia+GRACIA);
+  const porVencer=new Date(hoy.getFullYear(),hoy.getMonth(),dia-2);
+  if(hoy>limite) return 'VENCIDO';
+  if(hoy>=porVencer) return 'POR VENCER';
+  return 'AL DIA';
 }
 
 function prioridad(dias){
@@ -599,15 +620,17 @@ function moraHTML(dias){
   return`<span class="mora-badge ${cls}">${emoji} ${dias} día${dias!==1?'s':''} de mora</span>`;
 }
 
-function estadoBadge(e){
+function estadoBadge(j){
+  const e=typeof j==='string'?j:estadoCalculado(j);
   if(e==='PAGO')return'<span class="badge bvd">✅ Pagado</span>';
   if(e==='VENCIDO')return'<span class="badge brd">🔴 Vencido</span>';
   if(e==='POR VENCER')return'<span class="badge bam">🟡 Por vencer</span>';
-  return'<span class="badge bgr">⚪ Sin info</span>';
+  return'<span class="badge bgr">⚪ Al día</span>';
 }
 
 function rowClass(j){
-  if(j.estado==='PAGO')return'pagado';
+  const e=estadoCalculado(j);
+  if(e==='PAGO')return'pagado';
   const d=diasMora(j);
   return'mora-'+prioridad(d);
 }
@@ -625,7 +648,7 @@ async function loadAll(){
   populateCatFilter('jug-cat');
   renderDashboard();
   const dot=document.getElementById('notif-dot');
-  if(jugadores.filter(j=>j.estado==='VENCIDO'&&diasMora(j)>5).length>0)dot.style.display='block';
+  if(jugadores.filter(j=>estadoCalculado(j)==='VENCIDO'&&diasMora(j)>5).length>0)dot.style.display='block';
 }
 
 function populateCatFilter(selId){
@@ -637,13 +660,12 @@ function populateCatFilter(selId){
 
 function renderDashboard(){
   const activos=jugadores.filter(j=>j.estado_jugador!=='retirado');
-  const pagados=activos.filter(j=>j.estado==='PAGO');
-  const vencidos=activos.filter(j=>j.estado==='VENCIDO');
+  const pagados=activos.filter(j=>estadoCalculado(j)==='PAGO');
+  const vencidos=activos.filter(j=>estadoCalculado(j)==='VENCIDO');
+  const altaMora=vencidos.filter(j=>diasMora(j)>5);
   const recaudo=pagados.reduce((a,j)=>a+(j.valor||0),0);
   const pendiente=vencidos.reduce((a,j)=>a+(j.valor||0),0);
   const pct=activos.length?Math.round(pagados.length/activos.length*100):0;
-  const altaMora=vencidos.filter(j=>diasMora(j)>5);
-
   document.getElementById('dash-fecha').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('kpi-row').innerHTML=`
     <div class="kpi"><div class="kpi-val kv">$${fmt(recaudo)}</div><div class="kpi-label">💰 Recaudo</div><div class="kpi-sub" style="color:var(--vd)">${pagados.length} jugadores</div></div>
@@ -687,7 +709,7 @@ function renderCobrar(){
   const q=(document.getElementById('cobrar-q').value||'').toLowerCase();
   const cat=document.getElementById('cobrar-cat').value;
   const prior=document.getElementById('cobrar-prior').value;
-  let lista=jugadores.filter(j=>j.estado_jugador!=='retirado'&&j.estado==='VENCIDO');
+  let lista=jugadores.filter(j=>j.estado_jugador!=='retirado'&&estadoCalculado(j)==='VENCIDO');
   if(q)lista=lista.filter(j=>j.nombre.toLowerCase().includes(q)||(j.acudiente||'').toLowerCase().includes(q));
   if(cat)lista=lista.filter(j=>j.categoria===cat);
   lista=lista.map(j=>({...j,dias:diasMora(j),prior:prioridad(diasMora(j))}));
@@ -731,12 +753,12 @@ function renderJugadores(){
   let lista=jugadores.filter(j=>j.estado_jugador!=='retirado');
   if(q)lista=lista.filter(j=>j.nombre.toLowerCase().includes(q)||(j.acudiente||'').toLowerCase().includes(q));
   if(cat)lista=lista.filter(j=>j.categoria===cat);
-  if(est)lista=lista.filter(j=>j.estado===est);
+  if(est)lista=lista.filter(j=>estadoCalculado(j)===est);
   document.getElementById('jug-lista').innerHTML=lista.length?lista.map(j=>`
     <div class="prow ${rowClass(j)}" onclick="abrirFicha(${j.id})">
       <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:''}${!j.foto_url?ini(j.nombre):''}</div>
       <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria} · Día ${j.dia_pago||'?'} · ${PROFES[j.categoria]||''}</div></div>
-      <div class="pright">${estadoBadge(j.estado)}<div class="pmonto" style="margin-top:4px">$${fmt(j.valor)}</div></div>
+      <div class="pright">${estadoBadge(j)}<div class="pmonto" style="margin-top:4px">$${fmt(j.valor)}</div></div>
     </div>`).join(''):'<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No se encontraron jugadores</div></div>';
 }
 
@@ -782,7 +804,7 @@ async function renderActividad(){
   document.getElementById('act-kpis').innerHTML=`
     <div class="kpi"><div class="kpi-val ka">${lista.length}</div><div class="kpi-label">Seguimientos</div></div>
     <div class="kpi"><div class="kpi-val kb">${contactados}</div><div class="kpi-label">Contactados</div></div>
-    <div class="kpi"><div class="kpi-val kr">${jugadores.filter(j=>j.estado==='VENCIDO'&&!lista.some(s=>s.jugador_id===j.id)).length}</div><div class="kpi-label">Sin gestión</div></div>
+    <div class="kpi"><div class="kpi-val kr">${jugadores.filter(j=>estadoCalculado(j)==='VENCIDO'&&!lista.some(s=>s.jugador_id===j.id)).length}</div><div class="kpi-label">Sin gestión</div></div>
     <div class="kpi"><div class="kpi-val kv">${lista.filter(s=>s.resultado==='promete_pago'||s.resultado==='pago_total').length}</div><div class="kpi-label">Compromisos</div></div>
   `;
   const resLabels={promete_pago:'✅ Promete pago',no_responde:'❌ No responde',aplaza:'🔄 Aplaza',pago_parcial:'💰 Parcial',pago_total:'💚 Pagado'};
@@ -809,7 +831,7 @@ async function abrirFicha(id){
   document.getElementById('ficha-cat').textContent=`${j.categoria} · Profe ${PROFES[j.categoria]||'—'}`;
   document.getElementById('ficha-mora-badge').innerHTML=moraHTML(diasMora(j));
   document.getElementById('ficha-info-rows').innerHTML=`
-    <div class="irow"><span class="ikey">Estado de pago</span><span class="ival">${estadoBadge(j.estado)}</span></div>
+    <div class="irow"><span class="ikey">Estado de pago</span><span class="ival">${estadoBadge(j)}</span></div>
     <div class="irow"><span class="ikey">Categoría</span><span class="ival">${j.categoria}</span></div>
     <div class="irow"><span class="ikey">Mensualidad</span><span class="ival">$${fmt(j.valor)}</span></div>
     <div class="irow"><span class="ikey">Día de pago</span><span class="ival">${j.dia_pago||'—'}</span></div>
