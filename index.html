@@ -22,8 +22,6 @@
   --r:12px;--rs:8px;
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px}
-
-/* TOPBAR */
 .topbar{background:linear-gradient(135deg,#0D2447 0%,var(--az) 100%);height:58px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .tl{display:flex;align-items:center;gap:10px}
 .tlogo{width:36px;height:36px;border-radius:9px;overflow:hidden;background:rgba(255,255,255,.15);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
@@ -37,22 +35,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .role-tag.active{background:#fff;color:var(--az)}
 .notif-btn{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative}
 .notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#EF4444;border:1.5px solid var(--az)}
-
-/* NAV */
 .nav{background:var(--card);border-bottom:1px solid var(--bd);display:flex;overflow-x:auto;padding:0 12px;position:sticky;top:58px;z-index:90;box-shadow:var(--sh)}
 .nav::-webkit-scrollbar{display:none}
 .nb{padding:13px 14px;font-size:12px;font-weight:500;color:var(--tx2);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;transition:.15s;font-family:'Inter',sans-serif}
 .nb.active{color:var(--azm);border-bottom-color:var(--azm);font-weight:600}
-
-/* CONTENT */
 .content{padding:14px;max-width:900px;margin:0 auto}
 .sec{display:none}.sec.active{display:block}
-
-/* PAGE TITLE */
 .ptitle{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px}
 .psub{font-size:12px;color:var(--tx2);margin-bottom:14px}
-
-/* KPI GRID */
 .kpi4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
 @media(min-width:500px){.kpi4{grid-template-columns:repeat(4,1fr)}}
 .kpi{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:14px;box-shadow:var(--sh)}
@@ -60,19 +50,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .kpi-label{font-size:11px;color:var(--tx2);margin-top:5px;text-transform:uppercase;letter-spacing:.4px;font-weight:500}
 .kpi-sub{font-size:11px;margin-top:3px}
 .kv{color:var(--vd)}.kr{color:var(--rd)}.ka{color:var(--am)}.kb{color:var(--azm)}
-
-/* CARD */
 .card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
 .card-title{font-size:13px;font-weight:600;color:var(--tx)}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-
-/* ALERT STRIP */
 .alert{border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px}
 .alert-r{background:var(--rdc);color:var(--rd);border-left:3px solid var(--rd)}
 .alert-a{background:var(--amc);color:var(--am);border-left:3px solid var(--am)}
 .alert-v{background:var(--vdc);color:var(--vd);border-left:3px solid var(--vd)}
-
-/* PLAYER ROW */
 .prow{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:6px;background:var(--card);cursor:pointer;transition:.15s;box-shadow:var(--sh)}
 .prow:hover{border-color:var(--azm);transform:translateY(-1px);box-shadow:var(--shm)}
 .prow.mora-alta{border-left:3.5px solid var(--rd)}
@@ -87,23 +71,17 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .pright{text-align:right;flex-shrink:0}
 .pmonto{font-size:12px;font-weight:700;margin-bottom:3px}
 .pbtns{display:flex;gap:4px;justify-content:flex-end}
-
-/* BADGES */
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
 .bvd{background:var(--vdc);color:var(--vd)}
 .brd{background:var(--rdc);color:var(--rd)}
 .bam{background:var(--amc);color:var(--am)}
 .baz{background:var(--azc);color:var(--azm)}
 .bgr{background:#F3F4F6;color:#6B7280}
-
-/* MORA BADGE */
 .mora-badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700}
 .mb-alta{background:var(--rdc);color:var(--rd)}
 .mb-media{background:var(--amc);color:var(--am)}
 .mb-baja{background:var(--vdc);color:var(--vd)}
 .mb-ok{background:var(--vdc);color:var(--vd)}
-
-/* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--rs);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);transition:.15s;font-family:'Inter',sans-serif;line-height:1;white-space:nowrap}
 .btn:hover{background:#F3F4F6}
 .btn-verde{background:var(--vd);color:#fff;border-color:var(--vd)}
@@ -118,14 +96,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .btn-wa{background:#25D366;color:#fff;border-color:#25D366}
 .btn-wa:hover{opacity:.9}
 .btn-icon{width:30px;height:30px;padding:0;justify-content:center;border-radius:7px}
-
-/* SEARCH & FILTER */
 .toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;background:var(--card);color:var(--tx);outline:none;font-family:'Inter',sans-serif}
 .toolbar input{flex:1;min-width:140px}
 .toolbar input:focus,.toolbar select:focus{border-color:var(--azm)}
-
-/* MODAL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(3px)}
 .overlay.open{display:flex}
 @media(min-width:540px){.overlay{align-items:center;padding:16px}}
@@ -135,8 +109,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .mh-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700}
 .mclose{background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx2);line-height:1;padding:4px}
 .mbody{padding:18px}
-
-/* FORM */
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:400px){.fgrid{grid-template-columns:1fr}}
 .fg{display:flex;flex-direction:column;gap:5px}
@@ -145,8 +117,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .finput{padding:9px 11px;border:1px solid var(--bd);border-radius:var(--rs);font-size:13px;background:var(--card);color:var(--tx);outline:none;font-family:'Inter',sans-serif;width:100%}
 .finput:focus{border-color:var(--azm);box-shadow:0 0 0 3px rgba(26,86,168,.1)}
 .factions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
-
-/* FICHA */
 .ficha-top{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--bd)}
 .ficha-foto{width:68px;height:68px;border-radius:50%;background:var(--azc);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--azm);overflow:hidden;border:2.5px solid var(--bd);cursor:pointer;flex-shrink:0;position:relative}
 .ficha-foto img{width:68px;height:68px;object-fit:cover;border-radius:50%}
@@ -156,20 +126,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .ficha-nombre{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;line-height:1.2}
 .ficha-cat{font-size:12px;color:var(--tx2);margin-top:3px}
 .ficha-mora{margin-top:6px}
-
-/* INFO ROWS */
 .irow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)}
 .irow:last-child{border:none}
 .ikey{font-size:12px;color:var(--tx2);font-weight:500}
 .ival{font-size:13px;font-weight:600}
-
-/* TABS */
 .tabs{display:flex;border-bottom:1px solid var(--bd);margin:0 -18px;padding:0 18px}
 .tab{padding:10px 14px;font-size:12px;font-weight:500;color:var(--tx2);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap}
 .tab.active{color:var(--azm);border-bottom-color:var(--azm);font-weight:600}
 .tabcontent{display:none;padding-top:14px}.tabcontent.active{display:block}
-
-/* SEGUIMIENTO */
 .seg-item{padding:10px 12px;background:var(--bg);border-radius:var(--rs);margin-bottom:8px;border-left:3px solid var(--azm)}
 .seg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .seg-tipo{font-size:11px;font-weight:600;color:var(--azm)}
@@ -177,15 +141,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .seg-resultado{font-size:12px;font-weight:500}
 .seg-nota{font-size:11px;color:var(--tx2);margin-top:3px}
 .seg-resp{font-size:10px;color:var(--tx3);margin-top:3px}
-
-/* PAGO ITEM */
 .pago-item{padding:10px 12px;background:var(--vdc);border-radius:var(--rs);margin-bottom:8px;border-left:3px solid var(--vd)}
 .pago-header{display:flex;justify-content:space-between;align-items:center}
 .pago-mes{font-size:12px;font-weight:600;color:var(--vd)}
 .pago-val{font-size:14px;font-weight:700;color:var(--vd)}
 .pago-meta{font-size:10px;color:var(--tx2);margin-top:3px}
-
-/* ACTIVIDAD */
 .act-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
 .act-item:last-child{border:none}
 .act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -193,42 +153,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .act-name{font-size:12px;font-weight:600}
 .act-detail{font-size:11px;color:var(--tx2);margin-top:1px}
 .act-time{font-size:10px;color:var(--tx3);flex-shrink:0}
-
-/* EXPORT GRID */
 .export-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .export-card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;transition:.15s;box-shadow:var(--sh)}
 .export-card:hover{border-color:var(--azm);transform:translateY(-2px);box-shadow:var(--shm)}
 .export-icon{font-size:28px;margin-bottom:8px}
 .export-title{font-size:13px;font-weight:600;margin-bottom:4px}
 .export-desc{font-size:11px;color:var(--tx2)}
-
-/* EMPTY */
 .empty{text-align:center;padding:36px 16px;color:var(--tx2)}
 .empty-icon{font-size:36px;margin-bottom:8px}
 .empty-text{font-size:13px}
-
-/* LOADING */
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--bd);border-top-color:var(--azm);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading{text-align:center;padding:28px;color:var(--tx2);font-size:12px}
-
-/* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(8px);background:#1A1D23;color:#fff;padding:10px 18px;border-radius:10px;font-size:12px;z-index:999;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* PRIORITY LABELS */
-.pr-alta::before{content:"🔴 "}
-.pr-media::before{content:"🟡 "}
-.pr-baja::before{content:"🟢 "}
-
-/* STATS ROW */
 .stats-inline{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .stat-pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;background:var(--card);border:1px solid var(--bd)}
-
-/* RESPONSIVE */
 @media(max-width:400px){.kpi-val{font-size:20px}}
-
-/* PRINT */
 @media print{.topbar,.nav,.toolbar,.pbtns,.btn,.mclose,.tabs,.factions{display:none!important}body{background:#fff}.card{box-shadow:none;border:1px solid #ccc}}
 </style>
 </head>
@@ -415,21 +356,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
         <button class="tab" onclick="showTab('seguim',this)">Seguimientos</button>
         <button class="tab" onclick="showTab('acciones',this)">Acciones</button>
       </div>
-      <div class="tabcontent active" id="tab-datos">
-        <div id="ficha-info-rows"></div>
-      </div>
-      <div class="tabcontent" id="tab-pagos">
-        <div id="ficha-pagos-lista"></div>
-      </div>
+      <div class="tabcontent active" id="tab-datos"><div id="ficha-info-rows"></div></div>
+      <div class="tabcontent" id="tab-pagos"><div id="ficha-pagos-lista"></div></div>
       <div class="tabcontent" id="tab-seguim">
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <button class="btn btn-sm btn-ambar" onclick="abrirSeguimiento()">+ Registrar seguimiento</button>
         </div>
         <div id="ficha-seg-lista"></div>
       </div>
-      <div class="tabcontent" id="tab-acciones">
-        <div id="ficha-acciones"></div>
-      </div>
+      <div class="tabcontent" id="tab-acciones"><div id="ficha-acciones"></div></div>
     </div>
   </div>
 </div>
@@ -612,7 +547,6 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const sb=supabase.createClient(SB_URL,SB_KEY);
 
 const PROFES={'2007':'Edisson','2008':'Edisson','2009':'Edisson','2010':'Edisson','2011':'Fabián','2012':'Fabián','2013':'Fabián','2014':'Jessica','2015':'Jessica','2016':'José','2017':'José','2018':'Juan','2019':'Juan','FEMENINO':'Karen'};
-const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 
 let jugadores=[],seguimientosHoy=[],pagosHoy=[];
 let selectedJ=null,currentRole='admin';
@@ -675,11 +609,9 @@ function estadoBadge(e){
 function rowClass(j){
   if(j.estado==='PAGO')return'pagado';
   const d=diasMora(j);
-  const p=prioridad(d);
-  return'mora-'+p;
+  return'mora-'+prioridad(d);
 }
 
-// ── LOAD DATA ──
 async function loadAll(){
   const[{data:jData},{data:sData},{data:pData}]=await Promise.all([
     sb.from('jugadores').select('*').order('nombre'),
@@ -703,7 +635,6 @@ function populateCatFilter(selId){
   sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('');
 }
 
-// ── DASHBOARD ──
 function renderDashboard(){
   const activos=jugadores.filter(j=>j.estado_jugador!=='retirado');
   const pagados=activos.filter(j=>j.estado==='PAGO');
@@ -736,7 +667,6 @@ function renderDashboard(){
       <div class="pright"><div class="pmonto" style="color:var(--rd)">$${fmt(j.valor)}</div>${moraHTML(diasMora(j))}</div>
     </div>`).join(''):'<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Sin mora alta</div></div>';
 
-  // cats
   const cats={};
   activos.forEach(j=>{
     if(!cats[j.categoria])cats[j.categoria]={t:0,p:0,rec:0};
@@ -753,7 +683,6 @@ function renderDashboard(){
   }).join('');
 }
 
-// ── COBRAR HOY ──
 function renderCobrar(){
   const q=(document.getElementById('cobrar-q').value||'').toLowerCase();
   const cat=document.getElementById('cobrar-cat').value;
@@ -764,7 +693,6 @@ function renderCobrar(){
   lista=lista.map(j=>({...j,dias:diasMora(j),prior:prioridad(diasMora(j))}));
   if(prior)lista=lista.filter(j=>j.prior===prior);
   lista.sort((a,b)=>{const o={alta:0,media:1,baja:2};return o[a.prior]-o[b.prior]||b.dias-a.dias;});
-
   const alta=lista.filter(j=>j.prior==='alta').length;
   const media=lista.filter(j=>j.prior==='media').length;
   const baja=lista.filter(j=>j.prior==='baja').length;
@@ -774,7 +702,6 @@ function renderCobrar(){
     <span class="stat-pill" style="background:var(--vdc);color:var(--vd);border-color:var(--vd)">🟢 Baja: ${baja}</span>
     <span class="stat-pill">Total: ${lista.length}</span>
   `;
-
   document.getElementById('cobrar-lista').innerHTML=lista.length?lista.map(j=>{
     const hasSeg=seguimientosHoy.some(s=>s.jugador_id===j.id);
     return`<div class="prow mora-${j.prior}" onclick="abrirFicha(${j.id})">
@@ -797,7 +724,6 @@ function renderCobrar(){
   }).join(''):'<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Sin jugadores en mora</div></div>';
 }
 
-// ── JUGADORES ──
 function renderJugadores(){
   const q=(document.getElementById('jug-q').value||'').toLowerCase();
   const cat=document.getElementById('jug-cat').value;
@@ -814,7 +740,6 @@ function renderJugadores(){
     </div>`).join(''):'<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No se encontraron jugadores</div></div>';
 }
 
-// ── SEGUIMIENTOS ──
 async function renderSeguimientos(){
   const{data}=await sb.from('seguimientos').select('*,jugadores(nombre,categoria)').eq('fecha',today()).order('created_at',{ascending:false});
   const lista=data||[];
@@ -838,7 +763,6 @@ async function renderSeguimientos(){
     </div>`).join(''):'<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin seguimientos hoy</div></div>';
 }
 
-// ── RETIRADOS ──
 function renderRetirados(){
   const lista=jugadores.filter(j=>j.estado_jugador==='retirado');
   document.getElementById('ret-lista').innerHTML=lista.length?lista.map(j=>`
@@ -849,13 +773,11 @@ function renderRetirados(){
     </div>`).join(''):'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Sin jugadores retirados</div></div>';
 }
 
-// ── ACTIVIDAD ──
+// ── ACTIVIDAD — BUG CORREGIDO ──
 async function renderActividad(){
   const{data}=await sb.from('seguimientos').select('*,jugadores(nombre,categoria)').eq('fecha',today()).order('created_at',{ascending:false});
   const lista=data||[];
   const contactados=new Set(lista.map(s=>s.jugador_id)).size;
-  const resp={};
-  lista.forEach(s=>{const r=s.responsable||'Sin asignar';if(!resp[r])resp[r]=0;resp[r]++;});
   document.getElementById('act-fecha').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('act-kpis').innerHTML=`
     <div class="kpi"><div class="kpi-val ka">${lista.length}</div><div class="kpi-label">Seguimientos</div></div>
@@ -864,10 +786,9 @@ async function renderActividad(){
     <div class="kpi"><div class="kpi-val kv">${lista.filter(s=>s.resultado==='promete_pago'||s.resultado==='pago_total').length}</div><div class="kpi-label">Compromisos</div></div>
   `;
   const resLabels={promete_pago:'✅ Promete pago',no_responde:'❌ No responde',aplaza:'🔄 Aplaza',pago_parcial:'💰 Parcial',pago_total:'💚 Pagado'};
-  const tipoColor={whatsapp:'#25D366',llamada:SB_URL==='x'?'#':var(--azm),presencial:'var(--vd)',correo:'var(--azm)'};
   document.getElementById('act-lista').innerHTML=lista.length?lista.map(s=>`
     <div class="act-item">
-      <div class="act-dot" style="background:${s.tipo_contacto==='whatsapp'?'#25D366':'var(--azm)'}"></div>
+      <div class="act-dot" style="background:${s.tipo_contacto==='whatsapp'?'#25D366':'#1A56A8'}"></div>
       <div class="act-info">
         <div class="act-name">${s.jugadores?.nombre||'?'} <span style="font-size:10px;color:var(--tx2);font-weight:400">${s.jugadores?.categoria||''}</span></div>
         <div class="act-detail">${resLabels[s.resultado]||s.resultado} · ${s.responsable||'—'}${s.nota?` · "${s.nota}"`:''}</div>
@@ -876,7 +797,6 @@ async function renderActividad(){
     </div>`).join(''):'<div class="empty"><div class="empty-icon">💤</div><div class="empty-text">Sin actividad hoy</div></div>';
 }
 
-// ── FICHA ──
 async function abrirFicha(id){
   selectedJ=jugadores.find(j=>j.id===id);if(!selectedJ)return;
   const j=selectedJ;
@@ -887,9 +807,7 @@ async function abrirFicha(id){
   else{avEl.textContent=ini(j.nombre);avEl.style.cssText='font-size:20px;font-weight:700;color:var(--azm)';}
   document.getElementById('ficha-nombre').textContent=j.nombre;
   document.getElementById('ficha-cat').textContent=`${j.categoria} · Profe ${PROFES[j.categoria]||'—'}`;
-  const dias=diasMora(j);
-  document.getElementById('ficha-mora-badge').innerHTML=moraHTML(dias);
-
+  document.getElementById('ficha-mora-badge').innerHTML=moraHTML(diasMora(j));
   document.getElementById('ficha-info-rows').innerHTML=`
     <div class="irow"><span class="ikey">Estado de pago</span><span class="ival">${estadoBadge(j.estado)}</span></div>
     <div class="irow"><span class="ikey">Categoría</span><span class="ival">${j.categoria}</span></div>
@@ -903,8 +821,6 @@ async function abrirFicha(id){
     ${j.observaciones?`<div class="irow"><span class="ikey">Observaciones</span><span class="ival" style="font-size:12px">${j.observaciones}</span></div>`:''}
     ${currentRole==='admin'&&j.estado_jugador!=='retirado'?`<div style="margin-top:14px"><button class="btn btn-rojo btn-sm" onclick="retirarJugador(${j.id})">🚫 Retirar jugador</button></div>`:''}
   `;
-
-  // Acciones
   document.getElementById('ficha-acciones').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:10px">
       <button class="btn btn-verde" onclick="abrirPago()">✅ Registrar pago</button>
@@ -915,22 +831,17 @@ async function abrirFicha(id){
       ${currentRole==='admin'&&j.estado_jugador!=='retirado'?`<button class="btn btn-rojo" onclick="retirarJugador(${j.id})">🚫 Retirar jugador</button>`:''}
     </div>
   `;
-
-  // Cargar pagos y seguimientos en paralelo
   const[{data:pagosData},{data:segData}]=await Promise.all([
     sb.from('pagos').select('*').eq('jugador_id',id).order('fecha_pago',{ascending:false}).limit(12),
     sb.from('seguimientos').select('*').eq('jugador_id',id).order('created_at',{ascending:false}).limit(15)
   ]);
-
   const pagos=pagosData||[];
   document.getElementById('ficha-pagos-lista').innerHTML=pagos.length?pagos.map(p=>`
     <div class="pago-item">
       <div class="pago-header"><span class="pago-mes">${p.mes_pagado}</span><span class="pago-val">$${fmt(p.valor)}</span></div>
       <div class="pago-meta">${new Date(p.fecha_pago+'T12:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})} · ${p.metodo||'—'} · ${p.responsable||'—'}</div>
-    </div>`)
-    .join('')+'<div style="font-size:12px;color:var(--tx2);padding:8px 0">Total: '+pagos.length+' pagos registrados</div>'
+    </div>`).join('')+'<div style="font-size:12px;color:var(--tx2);padding:8px 0">Total: '+pagos.length+' pagos registrados</div>'
     :'<div class="empty"><div class="empty-text">Sin pagos registrados aún</div></div>';
-
   const segs=segData||[];
   const resL={promete_pago:'✅ Promete pago',no_responde:'❌ No responde',aplaza:'🔄 Aplaza',pago_parcial:'💰 Parcial',pago_total:'💚 Pagado'};
   const tipL={whatsapp:'📱',llamada:'📞',presencial:'🤝',correo:'✉️'};
@@ -943,11 +854,7 @@ async function abrirFicha(id){
       <div class="seg-resultado">${resL[s.resultado]||s.resultado}</div>
       ${s.nota?`<div class="seg-nota">"${s.nota}"</div>`:''}
       <div class="seg-resp">Por: ${s.responsable||'—'} · Mes: ${s.mes_deuda||'—'}</div>
-    </div>`)
-    .join('')
-    :'<div class="empty"><div class="empty-text">Sin seguimientos aún</div></div>';
-
-  // Reset tabs
+    </div>`).join(''):'<div class="empty"><div class="empty-text">Sin seguimientos aún</div></div>';
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tabcontent').forEach(t=>t.classList.remove('active'));
   document.querySelector('.tab').classList.add('active');
@@ -962,7 +869,6 @@ function showTab(id,btn){
   btn.classList.add('active');
 }
 
-// ── FOTO ──
 async function subirFotoJugador(e){
   if(!selectedJ)return;
   const file=e.target.files[0];if(!file)return;
@@ -978,7 +884,6 @@ async function subirFotoJugador(e){
   reader.readAsDataURL(file);
 }
 
-// ── PAGO ──
 function abrirPago(){
   if(!selectedJ)return;
   document.getElementById('pago-valor').value=selectedJ.valor||180000;
@@ -1011,7 +916,6 @@ async function guardarPago(){
   renderDashboard();renderCobrar();renderJugadores();
 }
 
-// ── SEGUIMIENTO ──
 function abrirSeguimiento(){document.getElementById('ov-seg').classList.add('open');}
 function abrirSegDirecto(id){selectedJ=jugadores.find(j=>j.id===id);abrirSeguimiento();}
 
@@ -1035,7 +939,6 @@ async function guardarSeguimiento(){
   renderDashboard();
 }
 
-// ── WA & EMAIL ──
 function enviarWA(){
   if(!selectedJ||!selectedJ.telefono){toast('Sin número');return;}
   const msg=`Hola ${selectedJ.acudiente||'acudiente'}, le saluda el Club Jazmin FC.\n\nLe recordamos que la mensualidad de *${selectedJ.nombre}* (${selectedJ.categoria}) por valor de *$${fmt(selectedJ.valor)}* se encuentra pendiente.\n\nPuede pagar por:\n• Nequi: 300 000 0000\n• Bold: 300 000 0000\n\nGracias 🙏\nClub Jazmin FC`;
@@ -1049,7 +952,6 @@ function enviarEmail(){
 }
 function waDirecto(id){selectedJ=jugadores.find(j=>j.id===id);enviarWA();}
 
-// ── RETIRAR / REACTIVAR ──
 async function retirarJugador(id){
   if(currentRole!=='admin'){toast('Solo admin puede retirar jugadores');return;}
   if(!confirm('¿Retirar este jugador? Sus datos e historial se preservan.'))return;
@@ -1066,7 +968,6 @@ async function reactivarJugador(id){
   renderRetirados();renderJugadores();renderDashboard();
 }
 
-// ── NUEVO JUGADOR ──
 function abrirNuevoJugador(){document.getElementById('ov-nuevo').classList.add('open');}
 async function inscribirJugador(){
   const nombre=document.getElementById('nj-nombre').value.trim().toUpperCase();
@@ -1091,9 +992,8 @@ async function inscribirJugador(){
   renderDashboard();renderJugadores();populateCatFilter('jug-cat');populateCatFilter('cobrar-cat');
 }
 
-// ── EXPORTAR EXCEL ──
 function exportarExcel(tipo){
-  if(typeof XLSX==='undefined'){toast('Cargando Excel...','1500');return;}
+  if(typeof XLSX==='undefined'){toast('Cargando Excel...');return;}
   let data=[],titulo='';
   const activos=jugadores.filter(j=>j.estado_jugador!=='retirado');
   if(tipo==='completa'){
@@ -1118,7 +1018,6 @@ function exportarExcel(tipo){
   toast('📊 Descargando Excel...');
 }
 
-// ── PDF ──
 function renderPdfSearch(){
   const q=(document.getElementById('pdf-q').value||'').toLowerCase();
   const lista=q?jugadores.filter(j=>j.nombre.toLowerCase().includes(q)&&j.estado_jugador!=='retirado').slice(0,6):[];
@@ -1141,8 +1040,6 @@ async function generarPDFJugador(id){
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Estado de Cuenta</title><style>
     body{font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:30px;color:#1A1D23}
     .header{background:#1A3A6B;color:#fff;padding:20px 24px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
-    .header h1{font-size:18px;margin:0}
-    .header small{font-size:12px;opacity:.7}
     .club-name{font-size:22px;font-weight:700}
     .section{margin-bottom:20px;border:1px solid #DDE3EA;border-radius:8px;overflow:hidden}
     .section-title{background:#F0F4F8;padding:10px 16px;font-size:13px;font-weight:700;color:#1A3A6B;border-bottom:1px solid #DDE3EA}
@@ -1183,7 +1080,6 @@ async function generarPDFJugador(id){
 
 function generarPDF(){if(selectedJ)generarPDFJugador(selectedJ.id);}
 
-// ── INIT ──
 async function init(){
   document.getElementById('dash-fecha').textContent='Cargando...';
   await loadAll();
