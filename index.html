@@ -1,47 +1,1194 @@
-ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS estado_jugador TEXT DEFAULT 'activo';
-ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS fecha_limite_pago DATE;
-ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS foto_url TEXT;
-ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS posicion TEXT;
-ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;
-ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS documento TEXT;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Jazmin FC — Sistema de Cartera</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --az:#1A3A6B;--azm:#1A56A8;--azc:#E8F0FB;--azb:#2471CC;
+  --vd:#1A6B3C;--vdm:#2E8B57;--vdc:#E8F5E9;
+  --rd:#C0392B;--rdc:#FDEDEC;
+  --am:#D4860B;--amc:#FEF3CD;
+  --bg:#F0F4F8;--card:#FFFFFF;
+  --bd:#DDE3EA;--bd2:#C8D0DA;
+  --tx:#1A1D23;--tx2:#6B7280;--tx3:#9CA3AF;
+  --sh:0 1px 3px rgba(0,0,0,.08);
+  --shm:0 4px 12px rgba(0,0,0,.1);
+  --r:12px;--rs:8px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px}
 
-CREATE TABLE IF NOT EXISTS seguimientos (
-  id BIGSERIAL PRIMARY KEY,
-  jugador_id BIGINT REFERENCES jugadores(id) ON DELETE CASCADE,
-  fecha DATE DEFAULT CURRENT_DATE,
-  mes_deuda TEXT,
-  tipo_contacto TEXT CHECK (tipo_contacto IN ('whatsapp','llamada','presencial','correo')),
-  resultado TEXT CHECK (resultado IN ('promete_pago','no_responde','aplaza','pago_parcial','pago_total')),
-  nota TEXT,
-  responsable TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+/* TOPBAR */
+.topbar{background:linear-gradient(135deg,#0D2447 0%,var(--az) 100%);height:58px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.tl{display:flex;align-items:center;gap:10px}
+.tlogo{width:36px;height:36px;border-radius:9px;overflow:hidden;background:rgba(255,255,255,.15);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.tlogo img{width:36px;height:36px;object-fit:cover}
+.tname{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff;line-height:1.2}
+.tname small{font-size:10px;font-weight:400;opacity:.65;display:block;font-family:'Inter',sans-serif}
+.tr{display:flex;align-items:center;gap:8px}
+.role-tag{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:.15s}
+.role-admin{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.role-staff{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2)}
+.role-tag.active{background:#fff;color:var(--az)}
+.notif-btn{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#EF4444;border:1.5px solid var(--az)}
 
-CREATE TABLE IF NOT EXISTS pagos (
-  id BIGSERIAL PRIMARY KEY,
-  jugador_id BIGINT REFERENCES jugadores(id) ON DELETE CASCADE,
-  fecha_pago DATE DEFAULT CURRENT_DATE,
-  mes_pagado TEXT NOT NULL,
-  valor INTEGER NOT NULL,
-  metodo TEXT,
-  responsable TEXT,
-  nota TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+/* NAV */
+.nav{background:var(--card);border-bottom:1px solid var(--bd);display:flex;overflow-x:auto;padding:0 12px;position:sticky;top:58px;z-index:90;box-shadow:var(--sh)}
+.nav::-webkit-scrollbar{display:none}
+.nb{padding:13px 14px;font-size:12px;font-weight:500;color:var(--tx2);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;transition:.15s;font-family:'Inter',sans-serif}
+.nb.active{color:var(--azm);border-bottom-color:var(--azm);font-weight:600}
 
-ALTER TABLE seguimientos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pagos ENABLE ROW LEVEL SECURITY;
+/* CONTENT */
+.content{padding:14px;max-width:900px;margin:0 auto}
+.sec{display:none}.sec.active{display:block}
 
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='seguimientos' AND policyname='allow all seguimientos') THEN
-    CREATE POLICY "allow all seguimientos" ON seguimientos FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='pagos' AND policyname='allow all pagos') THEN
-    CREATE POLICY "allow all pagos" ON pagos FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-END $$;
+/* PAGE TITLE */
+.ptitle{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px}
+.psub{font-size:12px;color:var(--tx2);margin-bottom:14px}
 
-CREATE INDEX IF NOT EXISTS idx_seguimientos_jugador ON seguimientos(jugador_id);
-CREATE INDEX IF NOT EXISTS idx_seguimientos_fecha ON seguimientos(fecha);
-CREATE INDEX IF NOT EXISTS idx_pagos_jugador ON pagos(jugador_id);
-CREATE INDEX IF NOT EXISTS idx_jugadores_estado ON jugadores(estado_jugador);
+/* KPI GRID */
+.kpi4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:500px){.kpi4{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:14px;box-shadow:var(--sh)}
+.kpi-val{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;line-height:1}
+.kpi-label{font-size:11px;color:var(--tx2);margin-top:5px;text-transform:uppercase;letter-spacing:.4px;font-weight:500}
+.kpi-sub{font-size:11px;margin-top:3px}
+.kv{color:var(--vd)}.kr{color:var(--rd)}.ka{color:var(--am)}.kb{color:var(--azm)}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
+.card-title{font-size:13px;font-weight:600;color:var(--tx)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+
+/* ALERT STRIP */
+.alert{border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px}
+.alert-r{background:var(--rdc);color:var(--rd);border-left:3px solid var(--rd)}
+.alert-a{background:var(--amc);color:var(--am);border-left:3px solid var(--am)}
+.alert-v{background:var(--vdc);color:var(--vd);border-left:3px solid var(--vd)}
+
+/* PLAYER ROW */
+.prow{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:6px;background:var(--card);cursor:pointer;transition:.15s;box-shadow:var(--sh)}
+.prow:hover{border-color:var(--azm);transform:translateY(-1px);box-shadow:var(--shm)}
+.prow.mora-alta{border-left:3.5px solid var(--rd)}
+.prow.mora-media{border-left:3.5px solid var(--am)}
+.prow.mora-baja{border-left:3.5px solid var(--vd)}
+.prow.pagado{border-left:3.5px solid var(--vd);background:#FAFFFC}
+.pav{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;background:var(--azc);color:var(--azm);overflow:hidden}
+.pav img{width:38px;height:38px;object-fit:cover;border-radius:50%}
+.pinfo{flex:1;min-width:0}
+.pname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmeta{font-size:11px;color:var(--tx2);margin-top:2px}
+.pright{text-align:right;flex-shrink:0}
+.pmonto{font-size:12px;font-weight:700;margin-bottom:3px}
+.pbtns{display:flex;gap:4px;justify-content:flex-end}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.bvd{background:var(--vdc);color:var(--vd)}
+.brd{background:var(--rdc);color:var(--rd)}
+.bam{background:var(--amc);color:var(--am)}
+.baz{background:var(--azc);color:var(--azm)}
+.bgr{background:#F3F4F6;color:#6B7280}
+
+/* MORA BADGE */
+.mora-badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.mb-alta{background:var(--rdc);color:var(--rd)}
+.mb-media{background:var(--amc);color:var(--am)}
+.mb-baja{background:var(--vdc);color:var(--vd)}
+.mb-ok{background:var(--vdc);color:var(--vd)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--rs);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);transition:.15s;font-family:'Inter',sans-serif;line-height:1;white-space:nowrap}
+.btn:hover{background:#F3F4F6}
+.btn-verde{background:var(--vd);color:#fff;border-color:var(--vd)}
+.btn-verde:hover{background:var(--vdm)}
+.btn-azul{background:var(--azm);color:#fff;border-color:var(--azm)}
+.btn-azul:hover{background:var(--azb)}
+.btn-rojo{background:var(--rd);color:#fff;border-color:var(--rd)}
+.btn-rojo:hover{opacity:.9}
+.btn-ambar{background:var(--am);color:#fff;border-color:var(--am)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-xs{padding:3px 8px;font-size:10px}
+.btn-wa{background:#25D366;color:#fff;border-color:#25D366}
+.btn-wa:hover{opacity:.9}
+.btn-icon{width:30px;height:30px;padding:0;justify-content:center;border-radius:7px}
+
+/* SEARCH & FILTER */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;background:var(--card);color:var(--tx);outline:none;font-family:'Inter',sans-serif}
+.toolbar input{flex:1;min-width:140px}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--azm)}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(3px)}
+.overlay.open{display:flex}
+@media(min-width:540px){.overlay{align-items:center;padding:16px}}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:93vh;overflow-y:auto;position:relative}
+@media(min-width:540px){.modal{border-radius:var(--r)}}
+.mh{padding:16px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:1}
+.mh-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700}
+.mclose{background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx2);line-height:1;padding:4px}
+.mbody{padding:18px}
+
+/* FORM */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:400px){.fgrid{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:1/-1}
+.flabel{font-size:11px;color:var(--tx2);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.finput{padding:9px 11px;border:1px solid var(--bd);border-radius:var(--rs);font-size:13px;background:var(--card);color:var(--tx);outline:none;font-family:'Inter',sans-serif;width:100%}
+.finput:focus{border-color:var(--azm);box-shadow:0 0 0 3px rgba(26,86,168,.1)}
+.factions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+
+/* FICHA */
+.ficha-top{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--bd)}
+.ficha-foto{width:68px;height:68px;border-radius:50%;background:var(--azc);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--azm);overflow:hidden;border:2.5px solid var(--bd);cursor:pointer;flex-shrink:0;position:relative}
+.ficha-foto img{width:68px;height:68px;object-fit:cover;border-radius:50%}
+.foto-ov{position:absolute;inset:0;background:rgba(0,0,0,.4);border-radius:50%;display:none;align-items:center;justify-content:center;font-size:18px}
+.ficha-foto:hover .foto-ov{display:flex}
+.ficha-datos{flex:1}
+.ficha-nombre{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;line-height:1.2}
+.ficha-cat{font-size:12px;color:var(--tx2);margin-top:3px}
+.ficha-mora{margin-top:6px}
+
+/* INFO ROWS */
+.irow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)}
+.irow:last-child{border:none}
+.ikey{font-size:12px;color:var(--tx2);font-weight:500}
+.ival{font-size:13px;font-weight:600}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--bd);margin:0 -18px;padding:0 18px}
+.tab{padding:10px 14px;font-size:12px;font-weight:500;color:var(--tx2);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap}
+.tab.active{color:var(--azm);border-bottom-color:var(--azm);font-weight:600}
+.tabcontent{display:none;padding-top:14px}.tabcontent.active{display:block}
+
+/* SEGUIMIENTO */
+.seg-item{padding:10px 12px;background:var(--bg);border-radius:var(--rs);margin-bottom:8px;border-left:3px solid var(--azm)}
+.seg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.seg-tipo{font-size:11px;font-weight:600;color:var(--azm)}
+.seg-fecha{font-size:10px;color:var(--tx3)}
+.seg-resultado{font-size:12px;font-weight:500}
+.seg-nota{font-size:11px;color:var(--tx2);margin-top:3px}
+.seg-resp{font-size:10px;color:var(--tx3);margin-top:3px}
+
+/* PAGO ITEM */
+.pago-item{padding:10px 12px;background:var(--vdc);border-radius:var(--rs);margin-bottom:8px;border-left:3px solid var(--vd)}
+.pago-header{display:flex;justify-content:space-between;align-items:center}
+.pago-mes{font-size:12px;font-weight:600;color:var(--vd)}
+.pago-val{font-size:14px;font-weight:700;color:var(--vd)}
+.pago-meta{font-size:10px;color:var(--tx2);margin-top:3px}
+
+/* ACTIVIDAD */
+.act-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.act-item:last-child{border:none}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.act-info{flex:1}
+.act-name{font-size:12px;font-weight:600}
+.act-detail{font-size:11px;color:var(--tx2);margin-top:1px}
+.act-time{font-size:10px;color:var(--tx3);flex-shrink:0}
+
+/* EXPORT GRID */
+.export-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.export-card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;transition:.15s;box-shadow:var(--sh)}
+.export-card:hover{border-color:var(--azm);transform:translateY(-2px);box-shadow:var(--shm)}
+.export-icon{font-size:28px;margin-bottom:8px}
+.export-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.export-desc{font-size:11px;color:var(--tx2)}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 16px;color:var(--tx2)}
+.empty-icon{font-size:36px;margin-bottom:8px}
+.empty-text{font-size:13px}
+
+/* LOADING */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--bd);border-top-color:var(--azm);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{text-align:center;padding:28px;color:var(--tx2);font-size:12px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(8px);background:#1A1D23;color:#fff;padding:10px 18px;border-radius:10px;font-size:12px;z-index:999;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* PRIORITY LABELS */
+.pr-alta::before{content:"🔴 "}
+.pr-media::before{content:"🟡 "}
+.pr-baja::before{content:"🟢 "}
+
+/* STATS ROW */
+.stats-inline{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.stat-pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;background:var(--card);border:1px solid var(--bd)}
+
+/* RESPONSIVE */
+@media(max-width:400px){.kpi-val{font-size:20px}}
+
+/* PRINT */
+@media print{.topbar,.nav,.toolbar,.pbtns,.btn,.mclose,.tabs,.factions{display:none!important}body{background:#fff}.card{box-shadow:none;border:1px solid #ccc}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tl">
+    <div class="tlogo">⚽</div>
+    <div class="tname">Jazmin FC <small>Sistema de Cartera</small></div>
+  </div>
+  <div class="tr">
+    <div class="role-tag role-admin active" id="rt-admin" onclick="setRole('admin')">Admin</div>
+    <div class="role-tag role-staff" id="rt-staff" onclick="setRole('staff')">Staff</div>
+    <button class="notif-btn" onclick="showSection('actividad',document.querySelectorAll('.nb')[5])">
+      🔔<div class="notif-dot" id="notif-dot" style="display:none"></div>
+    </button>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nb active" onclick="showSection('dashboard',this)">Panel</button>
+  <button class="nb" onclick="showSection('cobrar',this)">Cobrar Hoy</button>
+  <button class="nb" onclick="showSection('jugadores',this)">Jugadores</button>
+  <button class="nb" onclick="showSection('seguimientos',this)">Seguimientos</button>
+  <button class="nb" onclick="showSection('retirados',this)">Retirados</button>
+  <button class="nb" onclick="showSection('actividad',this)">Actividad</button>
+  <button class="nb" onclick="showSection('exportar',this)">Exportar</button>
+</div>
+
+<div class="content">
+
+<!-- DASHBOARD -->
+<div class="sec active" id="s-dashboard">
+  <div class="ptitle">Panel Principal</div>
+  <div class="psub" id="dash-fecha"></div>
+  <div class="kpi4" id="kpi-row"></div>
+  <div id="dash-alertas"></div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">🚨 Mora alta — cobrar urgente</span>
+      <button class="btn btn-sm btn-azul" onclick="showSection('cobrar',document.querySelectorAll('.nb')[1])">Ver todos →</button>
+    </div>
+    <div id="dash-mora-lista"></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">📊 Recaudo por categoría</span></div>
+    <div id="dash-cats"></div>
+  </div>
+</div>
+
+<!-- COBRAR HOY -->
+<div class="sec" id="s-cobrar">
+  <div class="ptitle">Cobrar Hoy</div>
+  <div class="psub">Ordenado por prioridad de mora</div>
+  <div class="toolbar">
+    <input type="text" placeholder="🔍 Buscar..." id="cobrar-q" oninput="renderCobrar()">
+    <select id="cobrar-cat" onchange="renderCobrar()"><option value="">Todas las categorías</option></select>
+    <select id="cobrar-prior" onchange="renderCobrar()">
+      <option value="">Todas las prioridades</option>
+      <option value="alta">🔴 Alta (&gt;5 días)</option>
+      <option value="media">🟡 Media (2-5 días)</option>
+      <option value="baja">🟢 Baja (0-1 días)</option>
+    </select>
+  </div>
+  <div class="stats-inline" id="cobrar-stats"></div>
+  <div id="cobrar-lista"></div>
+</div>
+
+<!-- JUGADORES -->
+<div class="sec" id="s-jugadores">
+  <div class="card-header" style="margin-bottom:12px">
+    <div><div class="ptitle" style="margin:0">Jugadores Activos</div></div>
+    <button class="btn btn-verde" onclick="abrirNuevoJugador()">+ Inscribir</button>
+  </div>
+  <div class="toolbar">
+    <input type="text" placeholder="🔍 Buscar jugador o acudiente..." id="jug-q" oninput="renderJugadores()">
+    <select id="jug-cat" onchange="renderJugadores()"><option value="">Todas</option></select>
+    <select id="jug-estado" onchange="renderJugadores()">
+      <option value="">Todos</option>
+      <option value="PAGO">✅ Pagados</option>
+      <option value="VENCIDO">🔴 Vencidos</option>
+      <option value="POR VENCER">🟡 Por vencer</option>
+    </select>
+  </div>
+  <div id="jug-lista"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+</div>
+
+<!-- SEGUIMIENTOS -->
+<div class="sec" id="s-seguimientos">
+  <div class="ptitle">Seguimientos del día</div>
+  <div class="psub" id="seg-resumen"></div>
+  <div class="toolbar">
+    <input type="text" placeholder="🔍 Buscar jugador..." id="seg-q" oninput="renderSeguimientos()">
+    <select id="seg-result" onchange="renderSeguimientos()">
+      <option value="">Todos los resultados</option>
+      <option value="promete_pago">Promete pago</option>
+      <option value="no_responde">No responde</option>
+      <option value="aplaza">Aplaza</option>
+      <option value="pago_parcial">Pago parcial</option>
+      <option value="pago_total">Pago total</option>
+    </select>
+  </div>
+  <div id="seg-lista"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+</div>
+
+<!-- RETIRADOS -->
+<div class="sec" id="s-retirados">
+  <div class="ptitle">Jugadores Retirados</div>
+  <div class="psub">Historial completo preservado</div>
+  <div id="ret-lista"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+</div>
+
+<!-- ACTIVIDAD -->
+<div class="sec" id="s-actividad">
+  <div class="ptitle">Panel de Actividad</div>
+  <div class="psub" id="act-fecha"></div>
+  <div class="kpi4" id="act-kpis" style="margin-bottom:14px"></div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">📋 Todos los seguimientos de hoy</span></div>
+    <div id="act-lista"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+  </div>
+</div>
+
+<!-- EXPORTAR -->
+<div class="sec" id="s-exportar">
+  <div class="ptitle">Exportar Reportes</div>
+  <div class="psub">Descarga en Excel o genera PDF por jugador</div>
+  <div class="export-grid">
+    <div class="export-card" onclick="exportarExcel('completa')">
+      <div class="export-icon">📊</div>
+      <div class="export-title">Cartera completa</div>
+      <div class="export-desc">Todos los jugadores con estado actual</div>
+    </div>
+    <div class="export-card" onclick="exportarExcel('mora')">
+      <div class="export-icon">🔴</div>
+      <div class="export-title">Jugadores en mora</div>
+      <div class="export-desc">Solo vencidos ordenados por días</div>
+    </div>
+    <div class="export-card" onclick="exportarExcel('mensual')">
+      <div class="export-icon">📅</div>
+      <div class="export-title">Reporte mensual</div>
+      <div class="export-desc">Pagos y seguimientos del mes</div>
+    </div>
+    <div class="export-card" onclick="exportarExcel('semanal')">
+      <div class="export-icon">📆</div>
+      <div class="export-title">Reporte semanal</div>
+      <div class="export-desc">Actividad de los últimos 7 días</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-header"><span class="card-title">📄 Estado de cuenta por jugador</span></div>
+    <div class="toolbar" style="margin-bottom:0">
+      <input type="text" placeholder="Buscar jugador para generar PDF..." id="pdf-q" oninput="renderPdfSearch()">
+    </div>
+    <div id="pdf-lista" style="margin-top:10px"></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- MODAL FICHA -->
+<div class="overlay" id="ov-ficha" onclick="cerrarOverlay('ov-ficha',event)">
+  <div class="modal">
+    <div class="mh">
+      <span class="mh-title" id="ficha-title">Perfil del jugador</span>
+      <button class="mclose" onclick="document.getElementById('ov-ficha').classList.remove('open')">✕</button>
+    </div>
+    <div class="ficha-top">
+      <div class="ficha-foto" id="ficha-foto-el" onclick="document.getElementById('foto-file').click()">
+        <span id="ficha-av-text">JD</span>
+        <div class="foto-ov">📷</div>
+      </div>
+      <input type="file" id="foto-file" accept="image/*" style="display:none" onchange="subirFotoJugador(event)">
+      <div class="ficha-datos">
+        <div class="ficha-nombre" id="ficha-nombre"></div>
+        <div class="ficha-cat" id="ficha-cat"></div>
+        <div class="ficha-mora" id="ficha-mora-badge"></div>
+      </div>
+    </div>
+    <div class="mbody">
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('datos',this)">Datos</button>
+        <button class="tab" onclick="showTab('pagos',this)">Pagos</button>
+        <button class="tab" onclick="showTab('seguim',this)">Seguimientos</button>
+        <button class="tab" onclick="showTab('acciones',this)">Acciones</button>
+      </div>
+      <div class="tabcontent active" id="tab-datos">
+        <div id="ficha-info-rows"></div>
+      </div>
+      <div class="tabcontent" id="tab-pagos">
+        <div id="ficha-pagos-lista"></div>
+      </div>
+      <div class="tabcontent" id="tab-seguim">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-sm btn-ambar" onclick="abrirSeguimiento()">+ Registrar seguimiento</button>
+        </div>
+        <div id="ficha-seg-lista"></div>
+      </div>
+      <div class="tabcontent" id="tab-acciones">
+        <div id="ficha-acciones"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SEGUIMIENTO -->
+<div class="overlay" id="ov-seg" onclick="cerrarOverlay('ov-seg',event)">
+  <div class="modal">
+    <div class="mh">
+      <span class="mh-title">Registrar seguimiento</span>
+      <button class="mclose" onclick="document.getElementById('ov-seg').classList.remove('open')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg">
+          <label class="flabel">Tipo de contacto</label>
+          <select class="finput" id="seg-tipo">
+            <option value="whatsapp">📱 WhatsApp</option>
+            <option value="llamada">📞 Llamada</option>
+            <option value="presencial">🤝 Presencial</option>
+            <option value="correo">✉️ Correo</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Resultado</label>
+          <select class="finput" id="seg-resultado">
+            <option value="promete_pago">✅ Promete pago</option>
+            <option value="no_responde">❌ No responde</option>
+            <option value="aplaza">🔄 Aplaza</option>
+            <option value="pago_parcial">💰 Pago parcial</option>
+            <option value="pago_total">💚 Pago total</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Mes de la deuda</label>
+          <select class="finput" id="seg-mes">
+            <option>ENERO</option><option>FEBRERO</option><option>MARZO</option>
+            <option>ABRIL</option><option selected>MAYO</option><option>JUNIO</option>
+            <option>JULIO</option><option>AGOSTO</option><option>SEPTIEMBRE</option>
+            <option>OCTUBRE</option><option>NOVIEMBRE</option><option>DICIEMBRE</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Responsable</label>
+          <select class="finput" id="seg-resp">
+            <option value="Caro">Caro</option>
+            <option value="Danna">Danna</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label class="flabel">Nota (opcional)</label>
+          <textarea class="finput" id="seg-nota" rows="2" placeholder="Ej: Dice que paga el viernes..." style="resize:none"></textarea>
+        </div>
+      </div>
+      <div class="factions">
+        <button class="btn" onclick="document.getElementById('ov-seg').classList.remove('open')">Cancelar</button>
+        <button class="btn btn-ambar" onclick="guardarSeguimiento()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGO -->
+<div class="overlay" id="ov-pago" onclick="cerrarOverlay('ov-pago',event)">
+  <div class="modal">
+    <div class="mh">
+      <span class="mh-title">Registrar pago</span>
+      <button class="mclose" onclick="document.getElementById('ov-pago').classList.remove('open')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg">
+          <label class="flabel">Mes pagado</label>
+          <select class="finput" id="pago-mes">
+            <option>ENERO</option><option>FEBRERO</option><option>MARZO</option>
+            <option>ABRIL</option><option selected>MAYO</option><option>JUNIO</option>
+            <option>JULIO</option><option>AGOSTO</option><option>SEPTIEMBRE</option>
+            <option>OCTUBRE</option><option>NOVIEMBRE</option><option>DICIEMBRE</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Valor ($)</label>
+          <input class="finput" type="number" id="pago-valor" placeholder="180000">
+        </div>
+        <div class="fg">
+          <label class="flabel">Método de pago</label>
+          <select class="finput" id="pago-metodo">
+            <option>NEQU</option><option>BOLD</option><option>DAVIPLATA</option>
+            <option>EFECTIVO</option><option>DATAFONO</option><option>CAJA SOCIAL</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Responsable</label>
+          <select class="finput" id="pago-resp">
+            <option value="Caro">Caro</option>
+            <option value="Danna">Danna</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label class="flabel">Nota</label>
+          <input class="finput" type="text" id="pago-nota" placeholder="Opcional...">
+        </div>
+      </div>
+      <div class="factions">
+        <button class="btn" onclick="document.getElementById('ov-pago').classList.remove('open')">Cancelar</button>
+        <button class="btn btn-verde" onclick="guardarPago()">✅ Confirmar pago</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO JUGADOR -->
+<div class="overlay" id="ov-nuevo" onclick="cerrarOverlay('ov-nuevo',event)">
+  <div class="modal">
+    <div class="mh">
+      <span class="mh-title">Inscribir jugador</span>
+      <button class="mclose" onclick="document.getElementById('ov-nuevo').classList.remove('open')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg full">
+          <label class="flabel">Nombre completo</label>
+          <input class="finput" type="text" id="nj-nombre" placeholder="NOMBRE DEL JUGADOR">
+        </div>
+        <div class="fg">
+          <label class="flabel">Categoría</label>
+          <select class="finput" id="nj-cat">
+            <option>2007</option><option>2008</option><option>2009</option>
+            <option>2010</option><option>2011</option><option>2012</option>
+            <option>2013</option><option selected>2014</option><option>2015</option>
+            <option>2016</option><option>2017</option><option>2018</option>
+            <option>2019</option><option>FEMENINO</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Valor mensualidad</label>
+          <input class="finput" type="number" id="nj-valor" value="180000">
+        </div>
+        <div class="fg">
+          <label class="flabel">Día de pago</label>
+          <input class="finput" type="number" id="nj-dia" value="1" min="1" max="28">
+        </div>
+        <div class="fg">
+          <label class="flabel">Método habitual</label>
+          <select class="finput" id="nj-metodo">
+            <option>NEQU</option><option>BOLD</option><option>DAVIPLATA</option>
+            <option>EFECTIVO</option><option>DATAFONO</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Nombre acudiente</label>
+          <input class="finput" type="text" id="nj-acudiente" placeholder="Papá/Mamá">
+        </div>
+        <div class="fg">
+          <label class="flabel">Teléfono</label>
+          <input class="finput" type="tel" id="nj-tel" placeholder="3001234567">
+        </div>
+        <div class="fg">
+          <label class="flabel">Correo</label>
+          <input class="finput" type="email" id="nj-email" placeholder="correo@gmail.com">
+        </div>
+        <div class="fg full">
+          <label class="flabel">Observaciones</label>
+          <input class="finput" type="text" id="nj-obs" placeholder="Notas adicionales...">
+        </div>
+      </div>
+      <div class="factions">
+        <button class="btn" onclick="document.getElementById('ov-nuevo').classList.remove('open')">Cancelar</button>
+        <button class="btn btn-verde" onclick="inscribirJugador()">✅ Inscribir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="foto-file-global" accept="image/*" style="display:none">
+
+<script>
+const SB_URL='https://wqdsxifxegtnqeosidgx.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxZHN4aWZ4ZWd0bnFlb3NpZGd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMDI4MTEsImV4cCI6MjA5MzU3ODgxMX0.-nrCwXH14i19rxgPZN7nF0hZxtJac9W4BRx2BDw3JXQ';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+const PROFES={'2007':'Edisson','2008':'Edisson','2009':'Edisson','2010':'Edisson','2011':'Fabián','2012':'Fabián','2013':'Fabián','2014':'Jessica','2015':'Jessica','2016':'José','2017':'José','2018':'Juan','2019':'Juan','FEMENINO':'Karen'};
+const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+let jugadores=[],seguimientosHoy=[],pagosHoy=[];
+let selectedJ=null,currentRole='admin';
+const today=()=>new Date().toISOString().split('T')[0];
+const fmt=n=>new Intl.NumberFormat('es-CO').format(n||0);
+const ini=s=>(s||'').split(' ').slice(0,2).map(w=>w[0]||'').join('');
+
+function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur)}
+
+function setRole(r){
+  currentRole=r;
+  ['admin','staff'].forEach(x=>document.getElementById('rt-'+x).classList.toggle('active',x===r));
+  toast('Modo: '+(r==='admin'?'Administrador':'Staff operativo'));
+}
+
+function cerrarOverlay(id,e){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('open')}
+
+function showSection(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='dashboard')renderDashboard();
+  if(id==='cobrar'){populateCatFilter('cobrar-cat');renderCobrar();}
+  if(id==='jugadores'){populateCatFilter('jug-cat');renderJugadores();}
+  if(id==='seguimientos')renderSeguimientos();
+  if(id==='retirados')renderRetirados();
+  if(id==='actividad')renderActividad();
+  if(id==='exportar')renderPdfSearch();
+}
+
+function diasMora(j){
+  if(j.estado==='PAGO')return 0;
+  if(!j.fecha_limite_pago)return j.estado==='VENCIDO'?15:0;
+  const diff=Math.floor((new Date()-new Date(j.fecha_limite_pago+'T12:00:00'))/(1000*60*60*24));
+  return Math.max(0,diff);
+}
+
+function prioridad(dias){
+  if(dias>5)return'alta';
+  if(dias>=2)return'media';
+  return'baja';
+}
+
+function moraHTML(dias){
+  if(dias===0)return'<span class="mora-badge mb-ok">✅ Al día</span>';
+  const p=prioridad(dias);
+  const cls=p==='alta'?'mb-alta':p==='media'?'mb-media':'mb-baja';
+  const emoji=p==='alta'?'🔴':p==='media'?'🟡':'🟢';
+  return`<span class="mora-badge ${cls}">${emoji} ${dias} día${dias!==1?'s':''} de mora</span>`;
+}
+
+function estadoBadge(e){
+  if(e==='PAGO')return'<span class="badge bvd">✅ Pagado</span>';
+  if(e==='VENCIDO')return'<span class="badge brd">🔴 Vencido</span>';
+  if(e==='POR VENCER')return'<span class="badge bam">🟡 Por vencer</span>';
+  return'<span class="badge bgr">⚪ Sin info</span>';
+}
+
+function rowClass(j){
+  if(j.estado==='PAGO')return'pagado';
+  const d=diasMora(j);
+  const p=prioridad(d);
+  return'mora-'+p;
+}
+
+// ── LOAD DATA ──
+async function loadAll(){
+  const[{data:jData},{data:sData},{data:pData}]=await Promise.all([
+    sb.from('jugadores').select('*').order('nombre'),
+    sb.from('seguimientos').select('*').eq('fecha',today()).order('created_at',{ascending:false}),
+    sb.from('pagos').select('*').eq('fecha_pago',today())
+  ]);
+  jugadores=jData||[];
+  seguimientosHoy=sData||[];
+  pagosHoy=pData||[];
+  populateCatFilter('cobrar-cat');
+  populateCatFilter('jug-cat');
+  renderDashboard();
+  const dot=document.getElementById('notif-dot');
+  if(jugadores.filter(j=>j.estado==='VENCIDO'&&diasMora(j)>5).length>0)dot.style.display='block';
+}
+
+function populateCatFilter(selId){
+  const cats=[...new Set(jugadores.filter(j=>j.estado_jugador!=='retirado').map(j=>j.categoria))].sort();
+  const sel=document.getElementById(selId);if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('');
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const activos=jugadores.filter(j=>j.estado_jugador!=='retirado');
+  const pagados=activos.filter(j=>j.estado==='PAGO');
+  const vencidos=activos.filter(j=>j.estado==='VENCIDO');
+  const recaudo=pagados.reduce((a,j)=>a+(j.valor||0),0);
+  const pendiente=vencidos.reduce((a,j)=>a+(j.valor||0),0);
+  const pct=activos.length?Math.round(pagados.length/activos.length*100):0;
+  const altaMora=vencidos.filter(j=>diasMora(j)>5);
+
+  document.getElementById('dash-fecha').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi"><div class="kpi-val kv">$${fmt(recaudo)}</div><div class="kpi-label">💰 Recaudo</div><div class="kpi-sub" style="color:var(--vd)">${pagados.length} jugadores</div></div>
+    <div class="kpi"><div class="kpi-val kr">$${fmt(pendiente)}</div><div class="kpi-label">⏳ Pendiente</div><div class="kpi-sub" style="color:var(--rd)">${vencidos.length} vencidos</div></div>
+    <div class="kpi"><div class="kpi-val kb">${pct}%</div><div class="kpi-label">📊 Recaudo</div><div class="kpi-sub">${pagados.length}/${activos.length}</div></div>
+    <div class="kpi"><div class="kpi-val ka">${seguimientosHoy.length}</div><div class="kpi-label">📞 Seguimientos hoy</div><div class="kpi-sub" style="color:var(--am)">contactados</div></div>
+  `;
+
+  let alertas='';
+  if(altaMora.length>0)alertas+=`<div class="alert alert-r">🚨 ${altaMora.length} jugadores con mora mayor a 5 días — cobrar urgente</div>`;
+  const sinSeg=vencidos.filter(j=>!seguimientosHoy.some(s=>s.jugador_id===j.id));
+  if(sinSeg.length>0)alertas+=`<div class="alert alert-a">⚠️ ${sinSeg.length} vencidos sin seguimiento hoy</div>`;
+  if(pagosHoy.length>0)alertas+=`<div class="alert alert-v">✅ ${pagosHoy.length} pago${pagosHoy.length>1?'s':''} registrado${pagosHoy.length>1?'s':''} hoy</div>`;
+  document.getElementById('dash-alertas').innerHTML=alertas;
+
+  const top=altaMora.sort((a,b)=>diasMora(b)-diasMora(a)).slice(0,4);
+  document.getElementById('dash-mora-lista').innerHTML=top.length?top.map(j=>`
+    <div class="prow mora-alta" onclick="abrirFicha(${j.id})">
+      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:''}${!j.foto_url?ini(j.nombre):''}</div>
+      <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria} · ${j.acudiente||'Sin acudiente'}</div></div>
+      <div class="pright"><div class="pmonto" style="color:var(--rd)">$${fmt(j.valor)}</div>${moraHTML(diasMora(j))}</div>
+    </div>`).join(''):'<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Sin mora alta</div></div>';
+
+  // cats
+  const cats={};
+  activos.forEach(j=>{
+    if(!cats[j.categoria])cats[j.categoria]={t:0,p:0,rec:0};
+    cats[j.categoria].t++;
+    if(j.estado==='PAGO'){cats[j.categoria].p++;cats[j.categoria].rec+=(j.valor||0);}
+  });
+  document.getElementById('dash-cats').innerHTML=Object.entries(cats).sort((a,b)=>b[1].rec-a[1].rec).map(([cat,d])=>{
+    const pct2=d.t?Math.round(d.p/d.t*100):0;
+    const bar=`<div style="height:4px;background:var(--bd);border-radius:2px;margin-top:5px;overflow:hidden"><div style="height:100%;background:var(--azm);width:${pct2}%;border-radius:2px"></div></div>`;
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bd)">
+      <div style="flex:1"><div style="font-size:13px;font-weight:600">${cat} <span style="font-size:11px;color:var(--tx2);font-weight:400">${PROFES[cat]||''}</span></div>${bar}</div>
+      <div style="text-align:right;margin-left:16px;flex-shrink:0"><div style="font-size:13px;font-weight:700;color:var(--vd)">$${fmt(d.rec)}</div><div style="font-size:11px;color:var(--tx2)">${d.p}/${d.t}</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── COBRAR HOY ──
+function renderCobrar(){
+  const q=(document.getElementById('cobrar-q').value||'').toLowerCase();
+  const cat=document.getElementById('cobrar-cat').value;
+  const prior=document.getElementById('cobrar-prior').value;
+  let lista=jugadores.filter(j=>j.estado_jugador!=='retirado'&&j.estado==='VENCIDO');
+  if(q)lista=lista.filter(j=>j.nombre.toLowerCase().includes(q)||(j.acudiente||'').toLowerCase().includes(q));
+  if(cat)lista=lista.filter(j=>j.categoria===cat);
+  lista=lista.map(j=>({...j,dias:diasMora(j),prior:prioridad(diasMora(j))}));
+  if(prior)lista=lista.filter(j=>j.prior===prior);
+  lista.sort((a,b)=>{const o={alta:0,media:1,baja:2};return o[a.prior]-o[b.prior]||b.dias-a.dias;});
+
+  const alta=lista.filter(j=>j.prior==='alta').length;
+  const media=lista.filter(j=>j.prior==='media').length;
+  const baja=lista.filter(j=>j.prior==='baja').length;
+  document.getElementById('cobrar-stats').innerHTML=`
+    <span class="stat-pill" style="background:var(--rdc);color:var(--rd);border-color:var(--rd)">🔴 Alta: ${alta}</span>
+    <span class="stat-pill" style="background:var(--amc);color:var(--am);border-color:var(--am)">🟡 Media: ${media}</span>
+    <span class="stat-pill" style="background:var(--vdc);color:var(--vd);border-color:var(--vd)">🟢 Baja: ${baja}</span>
+    <span class="stat-pill">Total: ${lista.length}</span>
+  `;
+
+  document.getElementById('cobrar-lista').innerHTML=lista.length?lista.map(j=>{
+    const hasSeg=seguimientosHoy.some(s=>s.jugador_id===j.id);
+    return`<div class="prow mora-${j.prior}" onclick="abrirFicha(${j.id})">
+      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:''}${!j.foto_url?ini(j.nombre):''}</div>
+      <div class="pinfo">
+        <div class="pname">${j.nombre}</div>
+        <div class="pmeta">${j.categoria} · ${j.acudiente||'Sin acudiente'}</div>
+        <div style="margin-top:3px">${hasSeg?'<span class="badge baz">✓ Contactado hoy</span>':'<span class="badge bgr">Sin gestión hoy</span>'}</div>
+      </div>
+      <div class="pright">
+        <div class="pmonto" style="color:var(--rd)">$${fmt(j.valor)}</div>
+        ${moraHTML(j.dias)}
+        <div class="pbtns" style="margin-top:5px">
+          ${j.telefono?`<button class="btn btn-xs btn-wa" onclick="event.stopPropagation();waDirecto(${j.id})">📱</button>`:''}
+          <button class="btn btn-xs btn-ambar" onclick="event.stopPropagation();abrirSegDirecto(${j.id})">📝</button>
+          <button class="btn btn-xs btn-verde" onclick="event.stopPropagation();abrirPagoDirecto(${j.id})">✅</button>
+        </div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Sin jugadores en mora</div></div>';
+}
+
+// ── JUGADORES ──
+function renderJugadores(){
+  const q=(document.getElementById('jug-q').value||'').toLowerCase();
+  const cat=document.getElementById('jug-cat').value;
+  const est=document.getElementById('jug-estado').value;
+  let lista=jugadores.filter(j=>j.estado_jugador!=='retirado');
+  if(q)lista=lista.filter(j=>j.nombre.toLowerCase().includes(q)||(j.acudiente||'').toLowerCase().includes(q));
+  if(cat)lista=lista.filter(j=>j.categoria===cat);
+  if(est)lista=lista.filter(j=>j.estado===est);
+  document.getElementById('jug-lista').innerHTML=lista.length?lista.map(j=>`
+    <div class="prow ${rowClass(j)}" onclick="abrirFicha(${j.id})">
+      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:''}${!j.foto_url?ini(j.nombre):''}</div>
+      <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria} · Día ${j.dia_pago||'?'} · ${PROFES[j.categoria]||''}</div></div>
+      <div class="pright">${estadoBadge(j.estado)}<div class="pmonto" style="margin-top:4px">$${fmt(j.valor)}</div></div>
+    </div>`).join(''):'<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No se encontraron jugadores</div></div>';
+}
+
+// ── SEGUIMIENTOS ──
+async function renderSeguimientos(){
+  const{data}=await sb.from('seguimientos').select('*,jugadores(nombre,categoria)').eq('fecha',today()).order('created_at',{ascending:false});
+  const lista=data||[];
+  const q=(document.getElementById('seg-q').value||'').toLowerCase();
+  const res=document.getElementById('seg-result').value;
+  let filtrada=lista;
+  if(q)filtrada=filtrada.filter(s=>(s.jugadores?.nombre||'').toLowerCase().includes(q));
+  if(res)filtrada=filtrada.filter(s=>s.resultado===res);
+  document.getElementById('seg-resumen').textContent=`${lista.length} seguimientos hoy`;
+  const resLabels={promete_pago:'✅ Promete pago',no_responde:'❌ No responde',aplaza:'🔄 Aplaza',pago_parcial:'💰 Pago parcial',pago_total:'💚 Pago total'};
+  const tipoLabels={whatsapp:'📱 WhatsApp',llamada:'📞 Llamada',presencial:'🤝 Presencial',correo:'✉️ Correo'};
+  document.getElementById('seg-lista').innerHTML=filtrada.length?filtrada.map(s=>`
+    <div class="seg-item">
+      <div class="seg-header">
+        <span class="seg-tipo">${tipoLabels[s.tipo_contacto]||s.tipo_contacto} · ${s.jugadores?.nombre||'?'}</span>
+        <span class="seg-fecha">${new Date(s.created_at).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</span>
+      </div>
+      <div class="seg-resultado">${resLabels[s.resultado]||s.resultado}</div>
+      ${s.nota?`<div class="seg-nota">"${s.nota}"</div>`:''}
+      <div class="seg-resp">Por: ${s.responsable||'—'} · Mes: ${s.mes_deuda||'—'}</div>
+    </div>`).join(''):'<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin seguimientos hoy</div></div>';
+}
+
+// ── RETIRADOS ──
+function renderRetirados(){
+  const lista=jugadores.filter(j=>j.estado_jugador==='retirado');
+  document.getElementById('ret-lista').innerHTML=lista.length?lista.map(j=>`
+    <div class="prow" onclick="abrirFicha(${j.id})">
+      <div class="pav" style="background:#F3F4F6;color:#6B7280">${ini(j.nombre)}</div>
+      <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria} · ${j.observaciones||'Sin notas'}</div></div>
+      <div class="pright"><span class="badge bgr">Retirado</span>${currentRole==='admin'?`<div style="margin-top:5px"><button class="btn btn-xs btn-verde" onclick="event.stopPropagation();reactivarJugador(${j.id})">↩ Reactivar</button></div>`:''}</div>
+    </div>`).join(''):'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Sin jugadores retirados</div></div>';
+}
+
+// ── ACTIVIDAD ──
+async function renderActividad(){
+  const{data}=await sb.from('seguimientos').select('*,jugadores(nombre,categoria)').eq('fecha',today()).order('created_at',{ascending:false});
+  const lista=data||[];
+  const contactados=new Set(lista.map(s=>s.jugador_id)).size;
+  const resp={};
+  lista.forEach(s=>{const r=s.responsable||'Sin asignar';if(!resp[r])resp[r]=0;resp[r]++;});
+  document.getElementById('act-fecha').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('act-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-val ka">${lista.length}</div><div class="kpi-label">Seguimientos</div></div>
+    <div class="kpi"><div class="kpi-val kb">${contactados}</div><div class="kpi-label">Contactados</div></div>
+    <div class="kpi"><div class="kpi-val kr">${jugadores.filter(j=>j.estado==='VENCIDO'&&!lista.some(s=>s.jugador_id===j.id)).length}</div><div class="kpi-label">Sin gestión</div></div>
+    <div class="kpi"><div class="kpi-val kv">${lista.filter(s=>s.resultado==='promete_pago'||s.resultado==='pago_total').length}</div><div class="kpi-label">Compromisos</div></div>
+  `;
+  const resLabels={promete_pago:'✅ Promete pago',no_responde:'❌ No responde',aplaza:'🔄 Aplaza',pago_parcial:'💰 Parcial',pago_total:'💚 Pagado'};
+  const tipoColor={whatsapp:'#25D366',llamada:SB_URL==='x'?'#':var(--azm),presencial:'var(--vd)',correo:'var(--azm)'};
+  document.getElementById('act-lista').innerHTML=lista.length?lista.map(s=>`
+    <div class="act-item">
+      <div class="act-dot" style="background:${s.tipo_contacto==='whatsapp'?'#25D366':'var(--azm)'}"></div>
+      <div class="act-info">
+        <div class="act-name">${s.jugadores?.nombre||'?'} <span style="font-size:10px;color:var(--tx2);font-weight:400">${s.jugadores?.categoria||''}</span></div>
+        <div class="act-detail">${resLabels[s.resultado]||s.resultado} · ${s.responsable||'—'}${s.nota?` · "${s.nota}"`:''}</div>
+      </div>
+      <div class="act-time">${new Date(s.created_at).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`).join(''):'<div class="empty"><div class="empty-icon">💤</div><div class="empty-text">Sin actividad hoy</div></div>';
+}
+
+// ── FICHA ──
+async function abrirFicha(id){
+  selectedJ=jugadores.find(j=>j.id===id);if(!selectedJ)return;
+  const j=selectedJ;
+  document.getElementById('ficha-title').textContent=j.nombre.split(' ').slice(0,2).join(' ');
+  const avEl=document.getElementById('ficha-av-text');
+  const fotoEl=document.getElementById('ficha-foto-el');
+  if(j.foto_url){fotoEl.innerHTML=`<img src="${j.foto_url}" alt=""><div class="foto-ov">📷</div>`;}
+  else{avEl.textContent=ini(j.nombre);avEl.style.cssText='font-size:20px;font-weight:700;color:var(--azm)';}
+  document.getElementById('ficha-nombre').textContent=j.nombre;
+  document.getElementById('ficha-cat').textContent=`${j.categoria} · Profe ${PROFES[j.categoria]||'—'}`;
+  const dias=diasMora(j);
+  document.getElementById('ficha-mora-badge').innerHTML=moraHTML(dias);
+
+  document.getElementById('ficha-info-rows').innerHTML=`
+    <div class="irow"><span class="ikey">Estado de pago</span><span class="ival">${estadoBadge(j.estado)}</span></div>
+    <div class="irow"><span class="ikey">Categoría</span><span class="ival">${j.categoria}</span></div>
+    <div class="irow"><span class="ikey">Mensualidad</span><span class="ival">$${fmt(j.valor)}</span></div>
+    <div class="irow"><span class="ikey">Día de pago</span><span class="ival">${j.dia_pago||'—'}</span></div>
+    <div class="irow"><span class="ikey">Acudiente</span><span class="ival">${j.acudiente||'—'}</span></div>
+    <div class="irow"><span class="ikey">Teléfono</span><span class="ival">${j.telefono||'—'}</span></div>
+    <div class="irow"><span class="ikey">Correo</span><span class="ival" style="font-size:12px">${j.email||'—'}</span></div>
+    <div class="irow"><span class="ikey">Método habitual</span><span class="ival">${j.metodo_pago||'—'}</span></div>
+    <div class="irow"><span class="ikey">Mes pagado</span><span class="ival">${j.mes_pagado||'—'}</span></div>
+    ${j.observaciones?`<div class="irow"><span class="ikey">Observaciones</span><span class="ival" style="font-size:12px">${j.observaciones}</span></div>`:''}
+    ${currentRole==='admin'&&j.estado_jugador!=='retirado'?`<div style="margin-top:14px"><button class="btn btn-rojo btn-sm" onclick="retirarJugador(${j.id})">🚫 Retirar jugador</button></div>`:''}
+  `;
+
+  // Acciones
+  document.getElementById('ficha-acciones').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-verde" onclick="abrirPago()">✅ Registrar pago</button>
+      <button class="btn btn-ambar" onclick="abrirSeguimiento()">📝 Registrar seguimiento</button>
+      ${j.telefono?`<button class="btn btn-wa" onclick="enviarWA()">📱 WhatsApp: ${j.telefono}</button>`:''}
+      ${j.email?`<button class="btn" onclick="enviarEmail()">✉️ Correo electrónico</button>`:''}
+      <button class="btn" onclick="generarPDF()">📄 Estado de cuenta PDF</button>
+      ${currentRole==='admin'&&j.estado_jugador!=='retirado'?`<button class="btn btn-rojo" onclick="retirarJugador(${j.id})">🚫 Retirar jugador</button>`:''}
+    </div>
+  `;
+
+  // Cargar pagos y seguimientos en paralelo
+  const[{data:pagosData},{data:segData}]=await Promise.all([
+    sb.from('pagos').select('*').eq('jugador_id',id).order('fecha_pago',{ascending:false}).limit(12),
+    sb.from('seguimientos').select('*').eq('jugador_id',id).order('created_at',{ascending:false}).limit(15)
+  ]);
+
+  const pagos=pagosData||[];
+  document.getElementById('ficha-pagos-lista').innerHTML=pagos.length?pagos.map(p=>`
+    <div class="pago-item">
+      <div class="pago-header"><span class="pago-mes">${p.mes_pagado}</span><span class="pago-val">$${fmt(p.valor)}</span></div>
+      <div class="pago-meta">${new Date(p.fecha_pago+'T12:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})} · ${p.metodo||'—'} · ${p.responsable||'—'}</div>
+    </div>`)
+    .join('')+'<div style="font-size:12px;color:var(--tx2);padding:8px 0">Total: '+pagos.length+' pagos registrados</div>'
+    :'<div class="empty"><div class="empty-text">Sin pagos registrados aún</div></div>';
+
+  const segs=segData||[];
+  const resL={promete_pago:'✅ Promete pago',no_responde:'❌ No responde',aplaza:'🔄 Aplaza',pago_parcial:'💰 Parcial',pago_total:'💚 Pagado'};
+  const tipL={whatsapp:'📱',llamada:'📞',presencial:'🤝',correo:'✉️'};
+  document.getElementById('ficha-seg-lista').innerHTML=segs.length?segs.map(s=>`
+    <div class="seg-item">
+      <div class="seg-header">
+        <span class="seg-tipo">${tipL[s.tipo_contacto]||''} ${s.tipo_contacto}</span>
+        <span class="seg-fecha">${new Date(s.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short'})}</span>
+      </div>
+      <div class="seg-resultado">${resL[s.resultado]||s.resultado}</div>
+      ${s.nota?`<div class="seg-nota">"${s.nota}"</div>`:''}
+      <div class="seg-resp">Por: ${s.responsable||'—'} · Mes: ${s.mes_deuda||'—'}</div>
+    </div>`)
+    .join('')
+    :'<div class="empty"><div class="empty-text">Sin seguimientos aún</div></div>';
+
+  // Reset tabs
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabcontent').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.tab').classList.add('active');
+  document.getElementById('tab-datos').classList.add('active');
+  document.getElementById('ov-ficha').classList.add('open');
+}
+
+function showTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabcontent').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── FOTO ──
+async function subirFotoJugador(e){
+  if(!selectedJ)return;
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    const b64=ev.target.result;
+    await sb.from('jugadores').update({foto_url:b64}).eq('id',selectedJ.id);
+    selectedJ.foto_url=b64;
+    jugadores=jugadores.map(j=>j.id===selectedJ.id?{...j,foto_url:b64}:j);
+    document.getElementById('ficha-foto-el').innerHTML=`<img src="${b64}" alt=""><div class="foto-ov">📷</div>`;
+    toast('📷 Foto guardada');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── PAGO ──
+function abrirPago(){
+  if(!selectedJ)return;
+  document.getElementById('pago-valor').value=selectedJ.valor||180000;
+  if(selectedJ.metodo_pago){const opt=[...document.getElementById('pago-metodo').options];opt.forEach(o=>{if(o.value===selectedJ.metodo_pago)o.selected=true;});}
+  document.getElementById('ov-pago').classList.add('open');
+}
+function abrirPagoDirecto(id){selectedJ=jugadores.find(j=>j.id===id);abrirPago();}
+
+async function guardarPago(){
+  if(!selectedJ)return;
+  const pago={
+    jugador_id:selectedJ.id,
+    mes_pagado:document.getElementById('pago-mes').value,
+    valor:parseInt(document.getElementById('pago-valor').value)||selectedJ.valor,
+    metodo:document.getElementById('pago-metodo').value,
+    responsable:document.getElementById('pago-resp').value,
+    nota:document.getElementById('pago-nota').value.trim(),
+    fecha_pago:today()
+  };
+  const[{error:e1},{error:e2}]=await Promise.all([
+    sb.from('pagos').insert(pago),
+    sb.from('jugadores').update({estado:'PAGO',mes_pagado:pago.mes_pagado,metodo_pago:pago.metodo}).eq('id',selectedJ.id)
+  ]);
+  if(e1||e2){toast('Error al guardar pago');return;}
+  jugadores=jugadores.map(j=>j.id===selectedJ.id?{...j,estado:'PAGO',mes_pagado:pago.mes_pagado}:j);
+  pagosHoy.push(pago);
+  document.getElementById('ov-pago').classList.remove('open');
+  document.getElementById('ov-ficha').classList.remove('open');
+  toast('✅ Pago registrado correctamente');
+  renderDashboard();renderCobrar();renderJugadores();
+}
+
+// ── SEGUIMIENTO ──
+function abrirSeguimiento(){document.getElementById('ov-seg').classList.add('open');}
+function abrirSegDirecto(id){selectedJ=jugadores.find(j=>j.id===id);abrirSeguimiento();}
+
+async function guardarSeguimiento(){
+  if(!selectedJ)return;
+  const seg={
+    jugador_id:selectedJ.id,
+    fecha:today(),
+    mes_deuda:document.getElementById('seg-mes').value,
+    tipo_contacto:document.getElementById('seg-tipo').value,
+    resultado:document.getElementById('seg-resultado').value,
+    nota:document.getElementById('seg-nota').value.trim(),
+    responsable:document.getElementById('seg-resp').value
+  };
+  const{error}=await sb.from('seguimientos').insert(seg);
+  if(error){toast('Error al guardar');return;}
+  seguimientosHoy.push({...seg,jugadores:{nombre:selectedJ.nombre,categoria:selectedJ.categoria},created_at:new Date().toISOString()});
+  document.getElementById('ov-seg').classList.remove('open');
+  document.getElementById('seg-nota').value='';
+  toast('📝 Seguimiento registrado');
+  renderDashboard();
+}
+
+// ── WA & EMAIL ──
+function enviarWA(){
+  if(!selectedJ||!selectedJ.telefono){toast('Sin número');return;}
+  const msg=`Hola ${selectedJ.acudiente||'acudiente'}, le saluda el Club Jazmin FC.\n\nLe recordamos que la mensualidad de *${selectedJ.nombre}* (${selectedJ.categoria}) por valor de *$${fmt(selectedJ.valor)}* se encuentra pendiente.\n\nPuede pagar por:\n• Nequi: 300 000 0000\n• Bold: 300 000 0000\n\nGracias 🙏\nClub Jazmin FC`;
+  window.open(`https://wa.me/57${selectedJ.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+function enviarEmail(){
+  if(!selectedJ||!selectedJ.email){toast('Sin correo');return;}
+  const subj=encodeURIComponent('Recordatorio pago — Club Jazmin FC');
+  const body=encodeURIComponent(`Hola ${selectedJ.acudiente||'acudiente'},\n\nLa mensualidad de ${selectedJ.nombre} (${selectedJ.categoria}) por $${fmt(selectedJ.valor)} está pendiente.\n\nMétodos de pago:\n- Nequi: 300 000 0000\n- Bold: 300 000 0000\n\nGracias.\nClub Jazmin FC`);
+  window.open(`mailto:${selectedJ.email}?subject=${subj}&body=${body}`,'_blank');
+}
+function waDirecto(id){selectedJ=jugadores.find(j=>j.id===id);enviarWA();}
+
+// ── RETIRAR / REACTIVAR ──
+async function retirarJugador(id){
+  if(currentRole!=='admin'){toast('Solo admin puede retirar jugadores');return;}
+  if(!confirm('¿Retirar este jugador? Sus datos e historial se preservan.'))return;
+  await sb.from('jugadores').update({estado_jugador:'retirado'}).eq('id',id);
+  jugadores=jugadores.map(j=>j.id===id?{...j,estado_jugador:'retirado'}:j);
+  document.getElementById('ov-ficha').classList.remove('open');
+  toast('Jugador retirado. Historial preservado.');
+  renderDashboard();renderJugadores();renderRetirados();
+}
+async function reactivarJugador(id){
+  await sb.from('jugadores').update({estado_jugador:'activo'}).eq('id',id);
+  jugadores=jugadores.map(j=>j.id===id?{...j,estado_jugador:'activo'}:j);
+  toast('✅ Jugador reactivado');
+  renderRetirados();renderJugadores();renderDashboard();
+}
+
+// ── NUEVO JUGADOR ──
+function abrirNuevoJugador(){document.getElementById('ov-nuevo').classList.add('open');}
+async function inscribirJugador(){
+  const nombre=document.getElementById('nj-nombre').value.trim().toUpperCase();
+  if(!nombre){toast('Escribe el nombre');return;}
+  const nuevo={
+    nombre,categoria:document.getElementById('nj-cat').value,
+    estado:'VENCIDO',estado_jugador:'activo',
+    valor:parseInt(document.getElementById('nj-valor').value)||180000,
+    dia_pago:parseInt(document.getElementById('nj-dia').value)||1,
+    metodo_pago:document.getElementById('nj-metodo').value,
+    acudiente:document.getElementById('nj-acudiente').value.trim(),
+    telefono:document.getElementById('nj-tel').value.trim(),
+    email:document.getElementById('nj-email').value.trim(),
+    observaciones:document.getElementById('nj-obs').value.trim()
+  };
+  const{data,error}=await sb.from('jugadores').insert(nuevo).select();
+  if(error){toast('Error: '+error.message);return;}
+  jugadores.push(data[0]);
+  document.getElementById('ov-nuevo').classList.remove('open');
+  ['nj-nombre','nj-acudiente','nj-tel','nj-email','nj-obs'].forEach(id=>document.getElementById(id).value='');
+  toast('✅ '+nombre.split(' ')[0]+' inscrito');
+  renderDashboard();renderJugadores();populateCatFilter('jug-cat');populateCatFilter('cobrar-cat');
+}
+
+// ── EXPORTAR EXCEL ──
+function exportarExcel(tipo){
+  if(typeof XLSX==='undefined'){toast('Cargando Excel...','1500');return;}
+  let data=[],titulo='';
+  const activos=jugadores.filter(j=>j.estado_jugador!=='retirado');
+  if(tipo==='completa'){
+    titulo='Cartera_Completa';
+    data=activos.map(j=>({'Nombre':j.nombre,'Categoría':j.categoria,'Estado':j.estado,'Valor':j.valor,'Mes pagado':j.mes_pagado||'','Acudiente':j.acudiente||'','Teléfono':j.telefono||'','Correo':j.email||'','Método':j.metodo_pago||'','Observaciones':j.observaciones||''}));
+  }else if(tipo==='mora'){
+    titulo='Jugadores_Mora';
+    data=activos.filter(j=>j.estado==='VENCIDO').map(j=>({
+      'Nombre':j.nombre,'Categoría':j.categoria,'Días mora':diasMora(j),
+      'Prioridad':prioridad(diasMora(j)).toUpperCase(),'Valor':j.valor,
+      'Acudiente':j.acudiente||'','Teléfono':j.telefono||'','Observaciones':j.observaciones||''
+    })).sort((a,b)=>b['Días mora']-a['Días mora']);
+  }else if(tipo==='mensual'||tipo==='semanal'){
+    titulo=tipo==='mensual'?'Reporte_Mensual':'Reporte_Semanal';
+    data=seguimientosHoy.map(s=>({'Fecha':s.fecha,'Jugador':s.jugadores?.nombre||'','Categoría':s.jugadores?.categoria||'','Tipo':s.tipo_contacto,'Resultado':s.resultado,'Mes deuda':s.mes_deuda||'','Nota':s.nota||'','Responsable':s.responsable||''}));
+  }
+  if(!data.length){toast('Sin datos para exportar');return;}
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb2=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2,ws,titulo.split('_')[0]);
+  XLSX.writeFile(wb2,`JazminFC_${titulo}_${today()}.xlsx`);
+  toast('📊 Descargando Excel...');
+}
+
+// ── PDF ──
+function renderPdfSearch(){
+  const q=(document.getElementById('pdf-q').value||'').toLowerCase();
+  const lista=q?jugadores.filter(j=>j.nombre.toLowerCase().includes(q)&&j.estado_jugador!=='retirado').slice(0,6):[];
+  document.getElementById('pdf-lista').innerHTML=lista.map(j=>`
+    <div class="prow" style="cursor:pointer" onclick="generarPDFJugador(${j.id})">
+      <div class="pav">${ini(j.nombre)}</div>
+      <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria}</div></div>
+      <div class="pright"><button class="btn btn-sm">📄 PDF</button></div>
+    </div>`).join('');
+}
+
+async function generarPDFJugador(id){
+  const j=jugadores.find(x=>x.id===id);if(!j)return;
+  const[{data:pagosD},{data:segsD}]=await Promise.all([
+    sb.from('pagos').select('*').eq('jugador_id',id).order('fecha_pago',{ascending:false}).limit(12),
+    sb.from('seguimientos').select('*').eq('jugador_id',id).order('created_at',{ascending:false}).limit(10)
+  ]);
+  const pagos=pagosD||[];const segs=segsD||[];
+  const dias=diasMora(j);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Estado de Cuenta</title><style>
+    body{font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:30px;color:#1A1D23}
+    .header{background:#1A3A6B;color:#fff;padding:20px 24px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+    .header h1{font-size:18px;margin:0}
+    .header small{font-size:12px;opacity:.7}
+    .club-name{font-size:22px;font-weight:700}
+    .section{margin-bottom:20px;border:1px solid #DDE3EA;border-radius:8px;overflow:hidden}
+    .section-title{background:#F0F4F8;padding:10px 16px;font-size:13px;font-weight:700;color:#1A3A6B;border-bottom:1px solid #DDE3EA}
+    .row{display:flex;justify-content:space-between;padding:9px 16px;border-bottom:1px solid #F0F4F8;font-size:13px}
+    .row:last-child{border:none}
+    .key{color:#6B7280}.val{font-weight:600}
+    .mora-alta{background:#FDEDEC;color:#C0392B;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+    .mora-ok{background:#E8F5E9;color:#1A6B3C;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+    .pago-row{padding:9px 16px;border-bottom:1px solid #F0F4F8;display:flex;justify-content:space-between;font-size:12px}
+    .footer{text-align:center;font-size:11px;color:#9CA3AF;margin-top:24px;padding-top:12px;border-top:1px solid #DDE3EA}
+  </style></head><body>
+  <div class="header">
+    <div><div class="club-name">⚽ JAZMIN FC</div><div style="font-size:12px;opacity:.7">Estado de cuenta</div></div>
+    <div style="text-align:right"><div style="font-size:13px">Fecha: ${new Date().toLocaleDateString('es-CO')}</div><div style="font-size:12px;opacity:.7">Soy de Cristo</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Datos del jugador</div>
+    <div class="row"><span class="key">Nombre</span><span class="val">${j.nombre}</span></div>
+    <div class="row"><span class="key">Categoría</span><span class="val">${j.categoria}</span></div>
+    <div class="row"><span class="key">Acudiente</span><span class="val">${j.acudiente||'—'}</span></div>
+    <div class="row"><span class="key">Mensualidad</span><span class="val">$${fmt(j.valor)}</span></div>
+    <div class="row"><span class="key">Estado</span><span class="val"><span class="${dias>0?'mora-alta':'mora-ok'}">${dias>0?`🔴 ${dias} días de mora`:'✅ Al día'}</span></span></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Historial de pagos (últimos ${pagos.length})</div>
+    ${pagos.length?pagos.map(p=>`<div class="pago-row"><span>${p.mes_pagado} ${new Date(p.fecha_pago+'T12:00:00').getFullYear()}</span><span style="color:#6B7280">${new Date(p.fecha_pago+'T12:00:00').toLocaleDateString('es-CO')}</span><span style="color:#1A6B3C;font-weight:700">$${fmt(p.valor)}</span></div>`).join(''):'<div class="pago-row">Sin pagos registrados</div>'}
+  </div>
+  <div class="section">
+    <div class="section-title">Seguimientos recientes</div>
+    ${segs.length?segs.slice(0,5).map(s=>`<div class="pago-row"><span>${new Date(s.created_at).toLocaleDateString('es-CO')}</span><span style="color:#6B7280">${s.tipo_contacto}</span><span>${s.resultado.replace('_',' ')}</span></div>`).join(''):'<div class="pago-row">Sin seguimientos</div>'}
+  </div>
+  <div class="footer">Generado por Sistema Jazmin FC · ${new Date().toLocaleString('es-CO')} · Soy de Cristo — More Than Just A Club</div>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);w.document.close();
+  setTimeout(()=>w.print(),500);
+}
+
+function generarPDF(){if(selectedJ)generarPDFJugador(selectedJ.id);}
+
+// ── INIT ──
+async function init(){
+  document.getElementById('dash-fecha').textContent='Cargando...';
+  await loadAll();
+}
+init();
+</script>
+</body>
+</html>
