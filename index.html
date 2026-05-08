@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<!-- FIX: CSP meta tag para permitir scripts inline en Vercel -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' data: blob: https:; connect-src 'self' https://wqdsxifxegtnqeosidgx.supabase.co https://wqdsxifxegtnqeosidgx.supabase.co/rest/v1/ wss://wqdsxifxegtnqeosidgx.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net;">
 <title>Jazmin FC — Sistema de Cartera</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -181,22 +183,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
     <div class="tname">Jazmin FC <small>Sistema de Cartera</small></div>
   </div>
   <div class="tr">
-    <div class="role-tag role-admin active" id="rt-admin" onclick="setRole('admin')">Admin</div>
-    <div class="role-tag role-staff" id="rt-staff" onclick="setRole('staff')">Staff</div>
-    <button class="notif-btn" onclick="showSection('actividad',document.querySelectorAll('.nb')[5])">
+    <div class="role-tag role-admin active" id="rt-admin">Admin</div>
+    <div class="role-tag role-staff" id="rt-staff">Staff</div>
+    <button class="notif-btn" id="btn-notif">
       🔔<div class="notif-dot" id="notif-dot" style="display:none"></div>
     </button>
   </div>
 </div>
 
 <div class="nav">
-  <button class="nb active" onclick="showSection('dashboard',this)">Panel</button>
-  <button class="nb" onclick="showSection('cobrar',this)">Cobrar Hoy</button>
-  <button class="nb" onclick="showSection('jugadores',this)">Jugadores</button>
-  <button class="nb" onclick="showSection('seguimientos',this)">Seguimientos</button>
-  <button class="nb" onclick="showSection('retirados',this)">Retirados</button>
-  <button class="nb" onclick="showSection('actividad',this)">Actividad</button>
-  <button class="nb" onclick="showSection('exportar',this)">Exportar</button>
+  <button class="nb active" data-sec="dashboard">Panel</button>
+  <button class="nb" data-sec="cobrar">Cobrar Hoy</button>
+  <button class="nb" data-sec="jugadores">Jugadores</button>
+  <button class="nb" data-sec="seguimientos">Seguimientos</button>
+  <button class="nb" data-sec="retirados">Retirados</button>
+  <button class="nb" data-sec="actividad">Actividad</button>
+  <button class="nb" data-sec="exportar">Exportar</button>
 </div>
 
 <div class="content">
@@ -210,7 +212,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   <div class="card">
     <div class="card-header">
       <span class="card-title">🚨 Mora alta — cobrar urgente</span>
-      <button class="btn btn-sm btn-azul" onclick="showSection('cobrar',document.querySelectorAll('.nb')[1])">Ver todos →</button>
+      <button class="btn btn-sm btn-azul" id="btn-ver-todos">Ver todos →</button>
     </div>
     <div id="dash-mora-lista"></div>
   </div>
@@ -225,9 +227,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   <div class="ptitle">Cobrar Hoy</div>
   <div class="psub">Ordenado por prioridad de mora</div>
   <div class="toolbar">
-    <input type="text" placeholder="🔍 Buscar..." id="cobrar-q" oninput="renderCobrar()">
-    <select id="cobrar-cat" onchange="renderCobrar()"><option value="">Todas las categorías</option></select>
-    <select id="cobrar-prior" onchange="renderCobrar()">
+    <input type="text" placeholder="🔍 Buscar..." id="cobrar-q">
+    <select id="cobrar-cat"><option value="">Todas las categorías</option></select>
+    <select id="cobrar-prior">
       <option value="">Todas las prioridades</option>
       <option value="alta">🔴 Alta (&gt;5 días)</option>
       <option value="media">🟡 Media (2-5 días)</option>
@@ -242,12 +244,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 <div class="sec" id="s-jugadores">
   <div class="card-header" style="margin-bottom:12px">
     <div><div class="ptitle" style="margin:0">Jugadores Activos</div></div>
-    <button class="btn btn-verde" onclick="abrirNuevoJugador()">+ Inscribir</button>
+    <button class="btn btn-verde" id="btn-inscribir">+ Inscribir</button>
   </div>
   <div class="toolbar">
-    <input type="text" placeholder="🔍 Buscar jugador o acudiente..." id="jug-q" oninput="renderJugadores()">
-    <select id="jug-cat" onchange="renderJugadores()"><option value="">Todas</option></select>
-    <select id="jug-estado" onchange="renderJugadores()">
+    <input type="text" placeholder="🔍 Buscar jugador o acudiente..." id="jug-q">
+    <select id="jug-cat"><option value="">Todas</option></select>
+    <select id="jug-estado">
       <option value="">Todos</option>
       <option value="PAGO">✅ Pagados</option>
       <option value="VENCIDO">🔴 Vencidos</option>
@@ -262,8 +264,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   <div class="ptitle">Seguimientos del día</div>
   <div class="psub" id="seg-resumen"></div>
   <div class="toolbar">
-    <input type="text" placeholder="🔍 Buscar jugador..." id="seg-q" oninput="renderSeguimientos()">
-    <select id="seg-result" onchange="renderSeguimientos()">
+    <input type="text" placeholder="🔍 Buscar jugador..." id="seg-q">
+    <select id="seg-result">
       <option value="">Todos los resultados</option>
       <option value="promete_pago">Promete pago</option>
       <option value="no_responde">No responde</option>
@@ -298,22 +300,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   <div class="ptitle">Exportar Reportes</div>
   <div class="psub">Descarga en Excel o genera PDF por jugador</div>
   <div class="export-grid">
-    <div class="export-card" onclick="exportarExcel('completa')">
+    <div class="export-card" data-export="completa">
       <div class="export-icon">📊</div>
       <div class="export-title">Cartera completa</div>
       <div class="export-desc">Todos los jugadores con estado actual</div>
     </div>
-    <div class="export-card" onclick="exportarExcel('mora')">
+    <div class="export-card" data-export="mora">
       <div class="export-icon">🔴</div>
       <div class="export-title">Jugadores en mora</div>
       <div class="export-desc">Solo vencidos ordenados por días</div>
     </div>
-    <div class="export-card" onclick="exportarExcel('mensual')">
+    <div class="export-card" data-export="mensual">
       <div class="export-icon">📅</div>
       <div class="export-title">Reporte mensual</div>
       <div class="export-desc">Pagos y seguimientos del mes</div>
     </div>
-    <div class="export-card" onclick="exportarExcel('semanal')">
+    <div class="export-card" data-export="semanal">
       <div class="export-icon">📆</div>
       <div class="export-title">Reporte semanal</div>
       <div class="export-desc">Actividad de los últimos 7 días</div>
@@ -322,7 +324,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   <div class="card" style="margin-top:14px">
     <div class="card-header"><span class="card-title">📄 Estado de cuenta por jugador</span></div>
     <div class="toolbar" style="margin-bottom:0">
-      <input type="text" placeholder="Buscar jugador para generar PDF..." id="pdf-q" oninput="renderPdfSearch()">
+      <input type="text" placeholder="Buscar jugador para generar PDF..." id="pdf-q">
     </div>
     <div id="pdf-lista" style="margin-top:10px"></div>
   </div>
@@ -331,18 +333,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 </div><!-- /content -->
 
 <!-- MODAL FICHA -->
-<div class="overlay" id="ov-ficha" onclick="cerrarOverlay('ov-ficha',event)">
+<div class="overlay" id="ov-ficha">
   <div class="modal">
     <div class="mh">
       <span class="mh-title" id="ficha-title">Perfil del jugador</span>
-      <button class="mclose" onclick="document.getElementById('ov-ficha').classList.remove('open')">✕</button>
+      <button class="mclose" data-close="ov-ficha">✕</button>
     </div>
     <div class="ficha-top">
-      <div class="ficha-foto" id="ficha-foto-el" onclick="document.getElementById('foto-file').click()">
+      <div class="ficha-foto" id="ficha-foto-el">
         <span id="ficha-av-text">JD</span>
         <div class="foto-ov">📷</div>
       </div>
-      <input type="file" id="foto-file" accept="image/*" style="display:none" onchange="subirFotoJugador(event)">
+      <input type="file" id="foto-file" accept="image/*" style="display:none">
       <div class="ficha-datos">
         <div class="ficha-nombre" id="ficha-nombre"></div>
         <div class="ficha-cat" id="ficha-cat"></div>
@@ -351,16 +353,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
     </div>
     <div class="mbody">
       <div class="tabs">
-        <button class="tab active" onclick="showTab('datos',this)">Datos</button>
-        <button class="tab" onclick="showTab('pagos',this)">Pagos</button>
-        <button class="tab" onclick="showTab('seguim',this)">Seguimientos</button>
-        <button class="tab" onclick="showTab('acciones',this)">Acciones</button>
+        <button class="tab active" data-tab="datos">Datos</button>
+        <button class="tab" data-tab="pagos">Pagos</button>
+        <button class="tab" data-tab="seguim">Seguimientos</button>
+        <button class="tab" data-tab="acciones">Acciones</button>
       </div>
       <div class="tabcontent active" id="tab-datos"><div id="ficha-info-rows"></div></div>
       <div class="tabcontent" id="tab-pagos"><div id="ficha-pagos-lista"></div></div>
       <div class="tabcontent" id="tab-seguim">
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-          <button class="btn btn-sm btn-ambar" onclick="abrirSeguimiento()">+ Registrar seguimiento</button>
+          <button class="btn btn-sm btn-ambar" id="btn-abrir-seg">+ Registrar seguimiento</button>
         </div>
         <div id="ficha-seg-lista"></div>
       </div>
@@ -370,11 +372,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 </div>
 
 <!-- MODAL SEGUIMIENTO -->
-<div class="overlay" id="ov-seg" onclick="cerrarOverlay('ov-seg',event)">
+<div class="overlay" id="ov-seg">
   <div class="modal">
     <div class="mh">
       <span class="mh-title">Registrar seguimiento</span>
-      <button class="mclose" onclick="document.getElementById('ov-seg').classList.remove('open')">✕</button>
+      <button class="mclose" data-close="ov-seg">✕</button>
     </div>
     <div class="mbody">
       <div class="fgrid">
@@ -419,19 +421,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
         </div>
       </div>
       <div class="factions">
-        <button class="btn" onclick="document.getElementById('ov-seg').classList.remove('open')">Cancelar</button>
-        <button class="btn btn-ambar" onclick="guardarSeguimiento()">💾 Guardar</button>
+        <button class="btn" data-close="ov-seg">Cancelar</button>
+        <button class="btn btn-ambar" id="btn-guardar-seg">💾 Guardar</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- MODAL PAGO -->
-<div class="overlay" id="ov-pago" onclick="cerrarOverlay('ov-pago',event)">
+<div class="overlay" id="ov-pago">
   <div class="modal">
     <div class="mh">
       <span class="mh-title">Registrar pago</span>
-      <button class="mclose" onclick="document.getElementById('ov-pago').classList.remove('open')">✕</button>
+      <button class="mclose" data-close="ov-pago">✕</button>
     </div>
     <div class="mbody">
       <div class="fgrid">
@@ -468,19 +470,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
         </div>
       </div>
       <div class="factions">
-        <button class="btn" onclick="document.getElementById('ov-pago').classList.remove('open')">Cancelar</button>
-        <button class="btn btn-verde" onclick="guardarPago()">✅ Confirmar pago</button>
+        <button class="btn" data-close="ov-pago">Cancelar</button>
+        <button class="btn btn-verde" id="btn-confirmar-pago">✅ Confirmar pago</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- MODAL NUEVO JUGADOR -->
-<div class="overlay" id="ov-nuevo" onclick="cerrarOverlay('ov-nuevo',event)">
+<div class="overlay" id="ov-nuevo">
   <div class="modal">
     <div class="mh">
       <span class="mh-title">Inscribir jugador</span>
-      <button class="mclose" onclick="document.getElementById('ov-nuevo').classList.remove('open')">✕</button>
+      <button class="mclose" data-close="ov-nuevo">✕</button>
     </div>
     <div class="mbody">
       <div class="fgrid">
@@ -504,7 +506,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
         </div>
         <div class="fg">
           <label class="flabel">Día de pago 📅</label>
-          <input class="finput" type="number" id="nj-dia" value="1" min="1" max="28" placeholder="Ej: 5 = vence el 5 de cada mes">
+          <input class="finput" type="number" id="nj-dia" value="1" min="1" max="28" placeholder="Ej: 5">
           <span style="font-size:10px;color:var(--tx3);margin-top:2px">Día del mes en que debe pagar (+ 2 días de gracia)</span>
         </div>
         <div class="fg">
@@ -532,8 +534,75 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
         </div>
       </div>
       <div class="factions">
-        <button class="btn" onclick="document.getElementById('ov-nuevo').classList.remove('open')">Cancelar</button>
-        <button class="btn btn-verde" onclick="inscribirJugador()">✅ Inscribir</button>
+        <button class="btn" data-close="ov-nuevo">Cancelar</button>
+        <button class="btn btn-verde" id="btn-inscribir-confirm">✅ Inscribir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR JUGADOR (NUEVO) ===== -->
+<div class="overlay" id="ov-editar">
+  <div class="modal">
+    <div class="mh">
+      <span class="mh-title">✏️ Editar jugador</span>
+      <button class="mclose" data-close="ov-editar">✕</button>
+    </div>
+    <div class="mbody">
+      <div style="background:var(--azc);border-radius:var(--rs);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--azm);font-weight:500">
+        ✏️ Editando: <strong id="edit-nombre-label">—</strong>
+      </div>
+      <div class="fgrid">
+        <div class="fg full">
+          <label class="flabel">Nombre completo</label>
+          <input class="finput" type="text" id="edit-nombre" placeholder="NOMBRE DEL JUGADOR">
+        </div>
+        <div class="fg">
+          <label class="flabel">Categoría</label>
+          <select class="finput" id="edit-cat">
+            <option>2007</option><option>2008</option><option>2009</option>
+            <option>2010</option><option>2011</option><option>2012</option>
+            <option>2013</option><option>2014</option><option>2015</option>
+            <option>2016</option><option>2017</option><option>2018</option>
+            <option>2019</option><option>FEMENINO</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Valor mensualidad ($)</label>
+          <input class="finput" type="number" id="edit-valor" placeholder="180000">
+        </div>
+        <div class="fg">
+          <label class="flabel">Día de pago 📅</label>
+          <input class="finput" type="number" id="edit-dia" min="1" max="28" placeholder="1-28">
+          <span style="font-size:10px;color:var(--tx3);margin-top:2px">Día del mes en que vence (+ 2 días de gracia)</span>
+        </div>
+        <div class="fg">
+          <label class="flabel">Método habitual</label>
+          <select class="finput" id="edit-metodo">
+            <option>NEQU</option><option>BOLD</option><option>DAVIPLATA</option>
+            <option>EFECTIVO</option><option>DATAFONO</option><option>CAJA SOCIAL</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Nombre acudiente</label>
+          <input class="finput" type="text" id="edit-acudiente" placeholder="Papá/Mamá">
+        </div>
+        <div class="fg">
+          <label class="flabel">Teléfono 📱</label>
+          <input class="finput" type="tel" id="edit-tel" placeholder="3001234567">
+        </div>
+        <div class="fg">
+          <label class="flabel">Correo</label>
+          <input class="finput" type="email" id="edit-email" placeholder="correo@gmail.com">
+        </div>
+        <div class="fg full">
+          <label class="flabel">Observaciones</label>
+          <input class="finput" type="text" id="edit-obs" placeholder="Notas adicionales...">
+        </div>
+      </div>
+      <div class="factions">
+        <button class="btn" data-close="ov-editar">Cancelar</button>
+        <button class="btn btn-azul" id="btn-guardar-edicion">💾 Guardar cambios</button>
       </div>
     </div>
   </div>
@@ -555,16 +624,96 @@ const today=()=>new Date().toISOString().split('T')[0];
 const fmt=n=>new Intl.NumberFormat('es-CO').format(n||0);
 const ini=s=>(s||'').split(' ').slice(0,2).map(w=>w[0]||'').join('');
 
-function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur)}
+// ── UTILIDADES ──
+function toast(msg,dur=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
 
+function abrirOverlay(id){document.getElementById(id).classList.add('open');}
+function cerrarOverlay(id){document.getElementById(id).classList.remove('open');}
+
+// ── EVENT LISTENERS GLOBALES (sustituyen todos los onclick) ──
+document.addEventListener('DOMContentLoaded',()=>{
+
+  // Roles
+  document.getElementById('rt-admin').addEventListener('click',()=>setRole('admin'));
+  document.getElementById('rt-staff').addEventListener('click',()=>setRole('staff'));
+  document.getElementById('btn-notif').addEventListener('click',()=>{
+    const nb=[...document.querySelectorAll('.nb')];
+    showSection('actividad',nb[5]);
+  });
+
+  // Nav
+  document.querySelectorAll('.nb').forEach(btn=>{
+    btn.addEventListener('click',()=>showSection(btn.dataset.sec,btn));
+  });
+
+  // Botón cerrar (data-close)
+  document.querySelectorAll('[data-close]').forEach(btn=>{
+    btn.addEventListener('click',()=>cerrarOverlay(btn.dataset.close));
+  });
+
+  // Cerrar overlay al clic en fondo
+  document.querySelectorAll('.overlay').forEach(ov=>{
+    ov.addEventListener('click',e=>{if(e.target===ov)cerrarOverlay(ov.id);});
+  });
+
+  // Tabs de ficha
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click',()=>showTab(tab.dataset.tab,tab));
+  });
+
+  // Foto jugador
+  document.getElementById('ficha-foto-el').addEventListener('click',()=>{
+    document.getElementById('foto-file').click();
+  });
+  document.getElementById('foto-file').addEventListener('change',subirFotoJugador);
+
+  // Toolbar filtros
+  document.getElementById('cobrar-q').addEventListener('input',renderCobrar);
+  document.getElementById('cobrar-cat').addEventListener('change',renderCobrar);
+  document.getElementById('cobrar-prior').addEventListener('change',renderCobrar);
+  document.getElementById('jug-q').addEventListener('input',renderJugadores);
+  document.getElementById('jug-cat').addEventListener('change',renderJugadores);
+  document.getElementById('jug-estado').addEventListener('change',renderJugadores);
+  document.getElementById('seg-q').addEventListener('input',renderSeguimientos);
+  document.getElementById('seg-result').addEventListener('change',renderSeguimientos);
+  document.getElementById('pdf-q').addEventListener('input',renderPdfSearch);
+
+  // Botones sección jugadores
+  document.getElementById('btn-inscribir').addEventListener('click',abrirNuevoJugador);
+  document.getElementById('btn-ver-todos').addEventListener('click',()=>{
+    const nb=[...document.querySelectorAll('.nb')];
+    showSection('cobrar',nb[1]);
+  });
+
+  // Modales: guardar
+  document.getElementById('btn-confirmar-pago').addEventListener('click',guardarPago);
+  document.getElementById('btn-guardar-seg').addEventListener('click',guardarSeguimiento);
+  document.getElementById('btn-inscribir-confirm').addEventListener('click',inscribirJugador);
+  document.getElementById('btn-guardar-edicion').addEventListener('click',guardarEdicion);
+
+  // Botón seguimiento dentro de ficha
+  document.getElementById('btn-abrir-seg').addEventListener('click',abrirSeguimiento);
+
+  // Exportar
+  document.querySelectorAll('.export-card').forEach(card=>{
+    card.addEventListener('click',()=>exportarExcel(card.dataset.export));
+  });
+
+  init();
+});
+
+// ── ROLES ──
 function setRole(r){
   currentRole=r;
   ['admin','staff'].forEach(x=>document.getElementById('rt-'+x).classList.toggle('active',x===r));
   toast('Modo: '+(r==='admin'?'Administrador':'Staff operativo'));
 }
 
-function cerrarOverlay(id,e){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('open')}
-
+// ── NAVEGACIÓN ──
 function showSection(id,btn){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
@@ -579,17 +728,14 @@ function showSection(id,btn){
   if(id==='exportar')renderPdfSearch();
 }
 
+// ── CÁLCULOS DE MORA ──
 function diasMora(j){
-  // Si ya pagó este mes → 0
   if(j.estado==='PAGO') return 0;
   const hoy=new Date();
   const dia=j.dia_pago||1;
-  const GRACIA=2; // días de gracia
-  // Fecha límite = día de pago del mes en curso + gracia
+  const GRACIA=2;
   let limite=new Date(hoy.getFullYear(),hoy.getMonth(),dia+GRACIA);
-  // Si aún no llegó la fecha límite de este mes → no hay mora
   if(hoy<=limite) return 0;
-  // Días desde que venció el plazo
   const diff=Math.floor((hoy-limite)/(1000*60*60*24));
   return Math.max(1,diff);
 }
@@ -635,6 +781,7 @@ function rowClass(j){
   return'mora-'+prioridad(d);
 }
 
+// ── CARGA INICIAL ──
 async function loadAll(){
   const[{data:jData},{data:sData},{data:pData}]=await Promise.all([
     sb.from('jugadores').select('*').order('nombre'),
@@ -658,6 +805,7 @@ function populateCatFilter(selId){
   sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('');
 }
 
+// ── DASHBOARD ──
 function renderDashboard(){
   const activos=jugadores.filter(j=>j.estado_jugador!=='retirado');
   const pagados=activos.filter(j=>estadoCalculado(j)==='PAGO');
@@ -673,7 +821,6 @@ function renderDashboard(){
     <div class="kpi"><div class="kpi-val kb">${pct}%</div><div class="kpi-label">📊 Recaudo</div><div class="kpi-sub">${pagados.length}/${activos.length}</div></div>
     <div class="kpi"><div class="kpi-val ka">${seguimientosHoy.length}</div><div class="kpi-label">📞 Seguimientos hoy</div><div class="kpi-sub" style="color:var(--am)">contactados</div></div>
   `;
-
   let alertas='';
   if(altaMora.length>0)alertas+=`<div class="alert alert-r">🚨 ${altaMora.length} jugadores con mora mayor a 5 días — cobrar urgente</div>`;
   const sinSeg=vencidos.filter(j=>!seguimientosHoy.some(s=>s.jugador_id===j.id));
@@ -683,8 +830,8 @@ function renderDashboard(){
 
   const top=altaMora.sort((a,b)=>diasMora(b)-diasMora(a)).slice(0,4);
   document.getElementById('dash-mora-lista').innerHTML=top.length?top.map(j=>`
-    <div class="prow mora-alta" onclick="abrirFicha(${j.id})">
-      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:''}${!j.foto_url?ini(j.nombre):''}</div>
+    <div class="prow mora-alta" data-id="${j.id}" data-action="ficha">
+      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:ini(j.nombre)}</div>
       <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria} · ${j.acudiente||'Sin acudiente'}</div></div>
       <div class="pright"><div class="pmonto" style="color:var(--rd)">$${fmt(j.valor)}</div>${moraHTML(diasMora(j))}</div>
     </div>`).join(''):'<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Sin mora alta</div></div>';
@@ -703,8 +850,14 @@ function renderDashboard(){
       <div style="text-align:right;margin-left:16px;flex-shrink:0"><div style="font-size:13px;font-weight:700;color:var(--vd)">$${fmt(d.rec)}</div><div style="font-size:11px;color:var(--tx2)">${d.p}/${d.t}</div></div>
     </div>`;
   }).join('');
+
+  // Listeners dinámicos para filas del dashboard
+  document.querySelectorAll('[data-action="ficha"]').forEach(el=>{
+    el.addEventListener('click',()=>abrirFicha(parseInt(el.dataset.id)));
+  });
 }
 
+// ── COBRAR HOY ──
 function renderCobrar(){
   const q=(document.getElementById('cobrar-q').value||'').toLowerCase();
   const cat=document.getElementById('cobrar-cat').value;
@@ -724,10 +877,11 @@ function renderCobrar(){
     <span class="stat-pill" style="background:var(--vdc);color:var(--vd);border-color:var(--vd)">🟢 Baja: ${baja}</span>
     <span class="stat-pill">Total: ${lista.length}</span>
   `;
-  document.getElementById('cobrar-lista').innerHTML=lista.length?lista.map(j=>{
+  const cont=document.getElementById('cobrar-lista');
+  cont.innerHTML=lista.length?lista.map(j=>{
     const hasSeg=seguimientosHoy.some(s=>s.jugador_id===j.id);
-    return`<div class="prow mora-${j.prior}" onclick="abrirFicha(${j.id})">
-      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:''}${!j.foto_url?ini(j.nombre):''}</div>
+    return`<div class="prow mora-${j.prior}" data-id="${j.id}" data-action="ficha">
+      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:ini(j.nombre)}</div>
       <div class="pinfo">
         <div class="pname">${j.nombre}</div>
         <div class="pmeta">${j.categoria} · ${j.acudiente||'Sin acudiente'}</div>
@@ -737,15 +891,29 @@ function renderCobrar(){
         <div class="pmonto" style="color:var(--rd)">$${fmt(j.valor)}</div>
         ${moraHTML(j.dias)}
         <div class="pbtns" style="margin-top:5px">
-          ${j.telefono?`<button class="btn btn-xs btn-wa" onclick="event.stopPropagation();waDirecto(${j.id})">📱</button>`:''}
-          <button class="btn btn-xs btn-ambar" onclick="event.stopPropagation();abrirSegDirecto(${j.id})">📝</button>
-          <button class="btn btn-xs btn-verde" onclick="event.stopPropagation();abrirPagoDirecto(${j.id})">✅</button>
+          ${j.telefono?`<button class="btn btn-xs btn-wa" data-id="${j.id}" data-action="wa">📱</button>`:''}
+          <button class="btn btn-xs btn-ambar" data-id="${j.id}" data-action="seg-directo">📝</button>
+          <button class="btn btn-xs btn-verde" data-id="${j.id}" data-action="pago-directo">✅</button>
         </div>
       </div>
     </div>`;
   }).join(''):'<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Sin jugadores en mora</div></div>';
+
+  cont.querySelectorAll('[data-action="ficha"]').forEach(el=>{
+    el.addEventListener('click',()=>abrirFicha(parseInt(el.dataset.id)));
+  });
+  cont.querySelectorAll('[data-action="wa"]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();selectedJ=jugadores.find(j=>j.id===parseInt(el.dataset.id));enviarWA();});
+  });
+  cont.querySelectorAll('[data-action="seg-directo"]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();selectedJ=jugadores.find(j=>j.id===parseInt(el.dataset.id));abrirSeguimiento();});
+  });
+  cont.querySelectorAll('[data-action="pago-directo"]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();selectedJ=jugadores.find(j=>j.id===parseInt(el.dataset.id));abrirPago();});
+  });
 }
 
+// ── JUGADORES ──
 function renderJugadores(){
   const q=(document.getElementById('jug-q').value||'').toLowerCase();
   const cat=document.getElementById('jug-cat').value;
@@ -754,14 +922,19 @@ function renderJugadores(){
   if(q)lista=lista.filter(j=>j.nombre.toLowerCase().includes(q)||(j.acudiente||'').toLowerCase().includes(q));
   if(cat)lista=lista.filter(j=>j.categoria===cat);
   if(est)lista=lista.filter(j=>estadoCalculado(j)===est);
-  document.getElementById('jug-lista').innerHTML=lista.length?lista.map(j=>`
-    <div class="prow ${rowClass(j)}" onclick="abrirFicha(${j.id})">
-      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:''}${!j.foto_url?ini(j.nombre):''}</div>
+  const cont=document.getElementById('jug-lista');
+  cont.innerHTML=lista.length?lista.map(j=>`
+    <div class="prow ${rowClass(j)}" data-id="${j.id}" data-action="ficha">
+      <div class="pav">${j.foto_url?`<img src="${j.foto_url}" alt="">`:ini(j.nombre)}</div>
       <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria} · Día ${j.dia_pago||'?'} · ${PROFES[j.categoria]||''}</div></div>
       <div class="pright">${estadoBadge(j)}<div class="pmonto" style="margin-top:4px">$${fmt(j.valor)}</div></div>
     </div>`).join(''):'<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No se encontraron jugadores</div></div>';
+  cont.querySelectorAll('[data-action="ficha"]').forEach(el=>{
+    el.addEventListener('click',()=>abrirFicha(parseInt(el.dataset.id)));
+  });
 }
 
+// ── SEGUIMIENTOS ──
 async function renderSeguimientos(){
   const{data}=await sb.from('seguimientos').select('*,jugadores(nombre,categoria)').eq('fecha',today()).order('created_at',{ascending:false});
   const lista=data||[];
@@ -785,17 +958,25 @@ async function renderSeguimientos(){
     </div>`).join(''):'<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin seguimientos hoy</div></div>';
 }
 
+// ── RETIRADOS ──
 function renderRetirados(){
   const lista=jugadores.filter(j=>j.estado_jugador==='retirado');
-  document.getElementById('ret-lista').innerHTML=lista.length?lista.map(j=>`
-    <div class="prow" onclick="abrirFicha(${j.id})">
+  const cont=document.getElementById('ret-lista');
+  cont.innerHTML=lista.length?lista.map(j=>`
+    <div class="prow" data-id="${j.id}" data-action="ficha">
       <div class="pav" style="background:#F3F4F6;color:#6B7280">${ini(j.nombre)}</div>
       <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria} · ${j.observaciones||'Sin notas'}</div></div>
-      <div class="pright"><span class="badge bgr">Retirado</span>${currentRole==='admin'?`<div style="margin-top:5px"><button class="btn btn-xs btn-verde" onclick="event.stopPropagation();reactivarJugador(${j.id})">↩ Reactivar</button></div>`:''}</div>
+      <div class="pright"><span class="badge bgr">Retirado</span>${currentRole==='admin'?`<div style="margin-top:5px"><button class="btn btn-xs btn-verde" data-id="${j.id}" data-action="reactivar">↩ Reactivar</button></div>`:''}</div>
     </div>`).join(''):'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Sin jugadores retirados</div></div>';
+  cont.querySelectorAll('[data-action="ficha"]').forEach(el=>{
+    el.addEventListener('click',()=>abrirFicha(parseInt(el.dataset.id)));
+  });
+  cont.querySelectorAll('[data-action="reactivar"]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();reactivarJugador(parseInt(el.dataset.id));});
+  });
 }
 
-// ── ACTIVIDAD — BUG CORREGIDO ──
+// ── ACTIVIDAD ──
 async function renderActividad(){
   const{data}=await sb.from('seguimientos').select('*,jugadores(nombre,categoria)').eq('fecha',today()).order('created_at',{ascending:false});
   const lista=data||[];
@@ -819,17 +1000,18 @@ async function renderActividad(){
     </div>`).join(''):'<div class="empty"><div class="empty-icon">💤</div><div class="empty-text">Sin actividad hoy</div></div>';
 }
 
+// ── FICHA JUGADOR ──
 async function abrirFicha(id){
   selectedJ=jugadores.find(j=>j.id===id);if(!selectedJ)return;
   const j=selectedJ;
   document.getElementById('ficha-title').textContent=j.nombre.split(' ').slice(0,2).join(' ');
-  const avEl=document.getElementById('ficha-av-text');
   const fotoEl=document.getElementById('ficha-foto-el');
   if(j.foto_url){fotoEl.innerHTML=`<img src="${j.foto_url}" alt=""><div class="foto-ov">📷</div>`;}
-  else{avEl.textContent=ini(j.nombre);avEl.style.cssText='font-size:20px;font-weight:700;color:var(--azm)';}
+  else{fotoEl.innerHTML=`<span style="font-size:20px;font-weight:700;color:var(--azm)">${ini(j.nombre)}</span><div class="foto-ov">📷</div>`;}
   document.getElementById('ficha-nombre').textContent=j.nombre;
   document.getElementById('ficha-cat').textContent=`${j.categoria} · Profe ${PROFES[j.categoria]||'—'}`;
   document.getElementById('ficha-mora-badge').innerHTML=moraHTML(diasMora(j));
+
   document.getElementById('ficha-info-rows').innerHTML=`
     <div class="irow"><span class="ikey">Estado de pago</span><span class="ival">${estadoBadge(j)}</span></div>
     <div class="irow"><span class="ikey">Categoría</span><span class="ival">${j.categoria}</span></div>
@@ -841,18 +1023,43 @@ async function abrirFicha(id){
     <div class="irow"><span class="ikey">Método habitual</span><span class="ival">${j.metodo_pago||'—'}</span></div>
     <div class="irow"><span class="ikey">Mes pagado</span><span class="ival">${j.mes_pagado||'—'}</span></div>
     ${j.observaciones?`<div class="irow"><span class="ikey">Observaciones</span><span class="ival" style="font-size:12px">${j.observaciones}</span></div>`:''}
-    ${currentRole==='admin'&&j.estado_jugador!=='retirado'?`<div style="margin-top:14px"><button class="btn btn-rojo btn-sm" onclick="retirarJugador(${j.id})">🚫 Retirar jugador</button></div>`:''}
+    ${currentRole==='admin'&&j.estado_jugador!=='retirado'?`<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-azul btn-sm" id="btn-editar-desde-datos">✏️ Editar datos</button>
+      <button class="btn btn-rojo btn-sm" id="btn-retirar-desde-datos">🚫 Retirar jugador</button>
+    </div>`:''}
   `;
+
+  // Botones dentro de ficha-info-rows (dinámicos)
+  const btnEditarDatos=document.getElementById('btn-editar-desde-datos');
+  if(btnEditarDatos) btnEditarDatos.addEventListener('click',()=>abrirEditar());
+  const btnRetirarDatos=document.getElementById('btn-retirar-desde-datos');
+  if(btnRetirarDatos) btnRetirarDatos.addEventListener('click',()=>retirarJugador(j.id));
+
   document.getElementById('ficha-acciones').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:10px">
-      <button class="btn btn-verde" onclick="abrirPago()">✅ Registrar pago</button>
-      <button class="btn btn-ambar" onclick="abrirSeguimiento()">📝 Registrar seguimiento</button>
-      ${j.telefono?`<button class="btn btn-wa" onclick="enviarWA()">📱 WhatsApp: ${j.telefono}</button>`:''}
-      ${j.email?`<button class="btn" onclick="enviarEmail()">✉️ Correo electrónico</button>`:''}
-      <button class="btn" onclick="generarPDF()">📄 Estado de cuenta PDF</button>
-      ${currentRole==='admin'&&j.estado_jugador!=='retirado'?`<button class="btn btn-rojo" onclick="retirarJugador(${j.id})">🚫 Retirar jugador</button>`:''}
+      <button class="btn btn-verde" id="btn-pago-accion">✅ Registrar pago</button>
+      <button class="btn btn-ambar" id="btn-seg-accion">📝 Registrar seguimiento</button>
+      ${j.telefono?`<button class="btn btn-wa" id="btn-wa-accion">📱 WhatsApp: ${j.telefono}</button>`:''}
+      ${j.email?`<button class="btn" id="btn-email-accion">✉️ Correo electrónico</button>`:''}
+      <button class="btn btn-azul" id="btn-editar-accion">✏️ Editar datos del jugador</button>
+      <button class="btn" id="btn-pdf-accion">📄 Estado de cuenta PDF</button>
+      ${currentRole==='admin'&&j.estado_jugador!=='retirado'?`<button class="btn btn-rojo" id="btn-retirar-accion">🚫 Retirar jugador</button>`:''}
     </div>
   `;
+
+  // Listeners de acciones
+  document.getElementById('btn-pago-accion').addEventListener('click',abrirPago);
+  document.getElementById('btn-seg-accion').addEventListener('click',abrirSeguimiento);
+  const btnWa=document.getElementById('btn-wa-accion');
+  if(btnWa) btnWa.addEventListener('click',enviarWA);
+  const btnEmail=document.getElementById('btn-email-accion');
+  if(btnEmail) btnEmail.addEventListener('click',enviarEmail);
+  document.getElementById('btn-editar-accion').addEventListener('click',()=>abrirEditar());
+  document.getElementById('btn-pdf-accion').addEventListener('click',generarPDF);
+  const btnRetirar=document.getElementById('btn-retirar-accion');
+  if(btnRetirar) btnRetirar.addEventListener('click',()=>retirarJugador(j.id));
+
+  // Cargar pagos y seguimientos
   const[{data:pagosData},{data:segData}]=await Promise.all([
     sb.from('pagos').select('*').eq('jugador_id',id).order('fecha_pago',{ascending:false}).limit(12),
     sb.from('seguimientos').select('*').eq('jugador_id',id).order('created_at',{ascending:false}).limit(15)
@@ -864,6 +1071,7 @@ async function abrirFicha(id){
       <div class="pago-meta">${new Date(p.fecha_pago+'T12:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})} · ${p.metodo||'—'} · ${p.responsable||'—'}</div>
     </div>`).join('')+'<div style="font-size:12px;color:var(--tx2);padding:8px 0">Total: '+pagos.length+' pagos registrados</div>'
     :'<div class="empty"><div class="empty-text">Sin pagos registrados aún</div></div>';
+
   const segs=segData||[];
   const resL={promete_pago:'✅ Promete pago',no_responde:'❌ No responde',aplaza:'🔄 Aplaza',pago_parcial:'💰 Parcial',pago_total:'💚 Pagado'};
   const tipL={whatsapp:'📱',llamada:'📞',presencial:'🤝',correo:'✉️'};
@@ -877,11 +1085,14 @@ async function abrirFicha(id){
       ${s.nota?`<div class="seg-nota">"${s.nota}"</div>`:''}
       <div class="seg-resp">Por: ${s.responsable||'—'} · Mes: ${s.mes_deuda||'—'}</div>
     </div>`).join(''):'<div class="empty"><div class="empty-text">Sin seguimientos aún</div></div>';
+
+  // Resetear tabs
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tabcontent').forEach(t=>t.classList.remove('active'));
   document.querySelector('.tab').classList.add('active');
   document.getElementById('tab-datos').classList.add('active');
-  document.getElementById('ov-ficha').classList.add('open');
+
+  abrirOverlay('ov-ficha');
 }
 
 function showTab(id,btn){
@@ -891,6 +1102,7 @@ function showTab(id,btn){
   btn.classList.add('active');
 }
 
+// ── FOTO ──
 async function subirFotoJugador(e){
   if(!selectedJ)return;
   const file=e.target.files[0];if(!file)return;
@@ -906,13 +1118,15 @@ async function subirFotoJugador(e){
   reader.readAsDataURL(file);
 }
 
+// ── PAGO ──
 function abrirPago(){
   if(!selectedJ)return;
   document.getElementById('pago-valor').value=selectedJ.valor||180000;
-  if(selectedJ.metodo_pago){const opt=[...document.getElementById('pago-metodo').options];opt.forEach(o=>{if(o.value===selectedJ.metodo_pago)o.selected=true;});}
-  document.getElementById('ov-pago').classList.add('open');
+  if(selectedJ.metodo_pago){
+    [...document.getElementById('pago-metodo').options].forEach(o=>{o.selected=o.value===selectedJ.metodo_pago;});
+  }
+  abrirOverlay('ov-pago');
 }
-function abrirPagoDirecto(id){selectedJ=jugadores.find(j=>j.id===id);abrirPago();}
 
 async function guardarPago(){
   if(!selectedJ)return;
@@ -932,14 +1146,14 @@ async function guardarPago(){
   if(e1||e2){toast('Error al guardar pago');return;}
   jugadores=jugadores.map(j=>j.id===selectedJ.id?{...j,estado:'PAGO',mes_pagado:pago.mes_pagado}:j);
   pagosHoy.push(pago);
-  document.getElementById('ov-pago').classList.remove('open');
-  document.getElementById('ov-ficha').classList.remove('open');
+  cerrarOverlay('ov-pago');
+  cerrarOverlay('ov-ficha');
   toast('✅ Pago registrado correctamente');
   renderDashboard();renderCobrar();renderJugadores();
 }
 
-function abrirSeguimiento(){document.getElementById('ov-seg').classList.add('open');}
-function abrirSegDirecto(id){selectedJ=jugadores.find(j=>j.id===id);abrirSeguimiento();}
+// ── SEGUIMIENTO ──
+function abrirSeguimiento(){abrirOverlay('ov-seg');}
 
 async function guardarSeguimiento(){
   if(!selectedJ)return;
@@ -955,31 +1169,79 @@ async function guardarSeguimiento(){
   const{error}=await sb.from('seguimientos').insert(seg);
   if(error){toast('Error al guardar');return;}
   seguimientosHoy.push({...seg,jugadores:{nombre:selectedJ.nombre,categoria:selectedJ.categoria},created_at:new Date().toISOString()});
-  document.getElementById('ov-seg').classList.remove('open');
+  cerrarOverlay('ov-seg');
   document.getElementById('seg-nota').value='';
   toast('📝 Seguimiento registrado');
   renderDashboard();
 }
 
+// ── EDITAR JUGADOR (NUEVO) ──
+function abrirEditar(){
+  if(!selectedJ)return;
+  const j=selectedJ;
+  document.getElementById('edit-nombre-label').textContent=j.nombre;
+  document.getElementById('edit-nombre').value=j.nombre||'';
+  document.getElementById('edit-acudiente').value=j.acudiente||'';
+  document.getElementById('edit-tel').value=j.telefono||'';
+  document.getElementById('edit-email').value=j.email||'';
+  document.getElementById('edit-valor').value=j.valor||180000;
+  document.getElementById('edit-dia').value=j.dia_pago||1;
+  document.getElementById('edit-obs').value=j.observaciones||'';
+  // Categoría
+  [...document.getElementById('edit-cat').options].forEach(o=>{o.selected=o.value===j.categoria;});
+  // Método
+  [...document.getElementById('edit-metodo').options].forEach(o=>{o.selected=o.value===(j.metodo_pago||'');});
+  abrirOverlay('ov-editar');
+}
+
+async function guardarEdicion(){
+  if(!selectedJ)return;
+  const nombre=document.getElementById('edit-nombre').value.trim().toUpperCase();
+  if(!nombre){toast('El nombre es obligatorio');return;}
+  const cambios={
+    nombre,
+    categoria:document.getElementById('edit-cat').value,
+    valor:parseInt(document.getElementById('edit-valor').value)||selectedJ.valor,
+    dia_pago:parseInt(document.getElementById('edit-dia').value)||1,
+    metodo_pago:document.getElementById('edit-metodo').value,
+    acudiente:document.getElementById('edit-acudiente').value.trim(),
+    telefono:document.getElementById('edit-tel').value.trim(),
+    email:document.getElementById('edit-email').value.trim(),
+    observaciones:document.getElementById('edit-obs').value.trim()
+  };
+  const{error}=await sb.from('jugadores').update(cambios).eq('id',selectedJ.id);
+  if(error){toast('Error al guardar: '+error.message);return;}
+  // Actualizar en memoria
+  jugadores=jugadores.map(j=>j.id===selectedJ.id?{...j,...cambios}:j);
+  selectedJ={...selectedJ,...cambios};
+  cerrarOverlay('ov-editar');
+  toast('✅ Datos actualizados correctamente');
+  // Refrescar ficha abierta
+  abrirFicha(selectedJ.id);
+  renderJugadores();
+  renderDashboard();
+}
+
+// ── WA / EMAIL ──
 function enviarWA(){
-  if(!selectedJ||!selectedJ.telefono){toast('Sin número');return;}
+  if(!selectedJ||!selectedJ.telefono){toast('Sin número registrado');return;}
   const msg=`Hola ${selectedJ.acudiente||'acudiente'}, le saluda el Club Jazmin FC.\n\nLe recordamos que la mensualidad de *${selectedJ.nombre}* (${selectedJ.categoria}) por valor de *$${fmt(selectedJ.valor)}* se encuentra pendiente.\n\nPuede pagar por:\n• Nequi: 300 000 0000\n• Bold: 300 000 0000\n\nGracias 🙏\nClub Jazmin FC`;
   window.open(`https://wa.me/57${selectedJ.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 function enviarEmail(){
-  if(!selectedJ||!selectedJ.email){toast('Sin correo');return;}
+  if(!selectedJ||!selectedJ.email){toast('Sin correo registrado');return;}
   const subj=encodeURIComponent('Recordatorio pago — Club Jazmin FC');
   const body=encodeURIComponent(`Hola ${selectedJ.acudiente||'acudiente'},\n\nLa mensualidad de ${selectedJ.nombre} (${selectedJ.categoria}) por $${fmt(selectedJ.valor)} está pendiente.\n\nMétodos de pago:\n- Nequi: 300 000 0000\n- Bold: 300 000 0000\n\nGracias.\nClub Jazmin FC`);
   window.open(`mailto:${selectedJ.email}?subject=${subj}&body=${body}`,'_blank');
 }
-function waDirecto(id){selectedJ=jugadores.find(j=>j.id===id);enviarWA();}
 
+// ── RETIRAR / REACTIVAR ──
 async function retirarJugador(id){
   if(currentRole!=='admin'){toast('Solo admin puede retirar jugadores');return;}
   if(!confirm('¿Retirar este jugador? Sus datos e historial se preservan.'))return;
   await sb.from('jugadores').update({estado_jugador:'retirado'}).eq('id',id);
   jugadores=jugadores.map(j=>j.id===id?{...j,estado_jugador:'retirado'}:j);
-  document.getElementById('ov-ficha').classList.remove('open');
+  cerrarOverlay('ov-ficha');
   toast('Jugador retirado. Historial preservado.');
   renderDashboard();renderJugadores();renderRetirados();
 }
@@ -990,7 +1252,8 @@ async function reactivarJugador(id){
   renderRetirados();renderJugadores();renderDashboard();
 }
 
-function abrirNuevoJugador(){document.getElementById('ov-nuevo').classList.add('open');}
+// ── NUEVO JUGADOR ──
+function abrirNuevoJugador(){abrirOverlay('ov-nuevo');}
 async function inscribirJugador(){
   const nombre=document.getElementById('nj-nombre').value.trim().toUpperCase();
   if(!nombre){toast('Escribe el nombre');return;}
@@ -1008,12 +1271,13 @@ async function inscribirJugador(){
   const{data,error}=await sb.from('jugadores').insert(nuevo).select();
   if(error){toast('Error: '+error.message);return;}
   jugadores.push(data[0]);
-  document.getElementById('ov-nuevo').classList.remove('open');
+  cerrarOverlay('ov-nuevo');
   ['nj-nombre','nj-acudiente','nj-tel','nj-email','nj-obs'].forEach(id=>document.getElementById(id).value='');
   toast('✅ '+nombre.split(' ')[0]+' inscrito');
   renderDashboard();renderJugadores();populateCatFilter('jug-cat');populateCatFilter('cobrar-cat');
 }
 
+// ── EXPORTAR ──
 function exportarExcel(tipo){
   if(typeof XLSX==='undefined'){toast('Cargando Excel...');return;}
   let data=[],titulo='';
@@ -1040,15 +1304,20 @@ function exportarExcel(tipo){
   toast('📊 Descargando Excel...');
 }
 
+// ── PDF ──
 function renderPdfSearch(){
   const q=(document.getElementById('pdf-q').value||'').toLowerCase();
   const lista=q?jugadores.filter(j=>j.nombre.toLowerCase().includes(q)&&j.estado_jugador!=='retirado').slice(0,6):[];
-  document.getElementById('pdf-lista').innerHTML=lista.map(j=>`
-    <div class="prow" style="cursor:pointer" onclick="generarPDFJugador(${j.id})">
+  const cont=document.getElementById('pdf-lista');
+  cont.innerHTML=lista.map(j=>`
+    <div class="prow" data-id="${j.id}" data-action="pdf">
       <div class="pav">${ini(j.nombre)}</div>
       <div class="pinfo"><div class="pname">${j.nombre}</div><div class="pmeta">${j.categoria}</div></div>
       <div class="pright"><button class="btn btn-sm">📄 PDF</button></div>
     </div>`).join('');
+  cont.querySelectorAll('[data-action="pdf"]').forEach(el=>{
+    el.addEventListener('click',()=>generarPDFJugador(parseInt(el.dataset.id)));
+  });
 }
 
 async function generarPDFJugador(id){
@@ -1102,11 +1371,11 @@ async function generarPDFJugador(id){
 
 function generarPDF(){if(selectedJ)generarPDFJugador(selectedJ.id);}
 
+// ── INIT ──
 async function init(){
   document.getElementById('dash-fecha').textContent='Cargando...';
   await loadAll();
 }
-init();
 </script>
 </body>
 </html>
