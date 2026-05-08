@@ -1,0 +1,13 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' data: blob: https:; connect-src 'self' https://wqdsxifxegtnqeosidgx.supabase.co https://wqdsxifxegtnqeosidgx.supabase.co/rest/v1/ wss://wqdsxifxegtnqeosidgx.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net;"
+        }
+      ]
+    }
+  ]
+}
